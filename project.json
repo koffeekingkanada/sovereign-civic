@@ -1,0 +1,20 @@
+{
+  "overview": "A private, organization-branded messaging and directory app for approved staff, with Internet Identity sign-in and administrator approval.",
+  "features": [
+    "Sign in with Internet Identity",
+    "Browse an approved-staff directory",
+    "Send and read one-to-one messages",
+    "Administrator approval, suspension and role management",
+    "Organization branding with a navy and gold SCS badge",
+    "Animated vault-closing sign-in intro with a Skip button"
+  ],
+  "category": "messaging",
+  "tags": [
+    "messaging",
+    "directory",
+    "internal-tools",
+    "government",
+    "internet-identity"
+  ],
+  "last_updated": "2026-11-06T21:31:42.198Z"
+}

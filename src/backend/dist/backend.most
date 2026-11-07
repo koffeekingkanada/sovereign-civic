@@ -1,0 +1,298 @@
+// Version: 4.0.0
+type AccessControlState__201339279 =
+  {
+    var adminAssigned : Bool;
+    userRoles : Map__230067015<Principal, UserRole__91647283>
+  };
+type Data__44217153<K, V> = {var count : Nat__227979830; kvs : [var ?(K, V)]};
+type Internal__283199666<K, V> =
+  {children : [var ?Node__204828119<K, V>]; data : Data__44217153<K, V>};
+type Leaf__598469445<K, V> = {data : Data__44217153<K, V>};
+type Map__230067015<K, V> = Map__405889023<K, V>;
+type Map__405889023<K, V> = Map__603270868<K, V>;
+type Map__603270868<K, V> =
+  {var root : Node__204828119<K, V>; var size : Nat__227979830};
+type Message__1049318402 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type Message__494754899 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type Message__659739635 =
+  {
+    ciphertext : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type Message__678077160 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type Message__781552358 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type Message__804209456 =
+  {
+    content : Text;
+    recipient : UserId__343168941;
+    sender : UserId__343168941;
+    timestamp : Timestamp__301639476
+  };
+type Nat__227979830 = Nat__920180692;
+type Nat__920180692 = Nat;
+type NewActor__1073511891 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__494754899]>;
+    profiles : Map__230067015<Principal, Profile__263381679>
+  };
+type NewActor__244663399 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__678077160]>;
+    profiles : Map__230067015<Principal, NewProfile__870807565>
+  };
+type NewActor__266457383 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__659739635]>;
+    profiles : Map__230067015<Principal, Profile__911836397>
+  };
+type NewActor__346813299 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [NewMessage__11650293]>;
+    profiles : Map__230067015<Principal, Profile__415376870>
+  };
+type NewActor__666861742 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__1049318402]>;
+    profiles : Map__230067015<Principal, Profile__2656505>
+  };
+type NewActor__764466830 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [NewMessage__633497213]>;
+    profiles : Map__230067015<Principal, Profile__632657341>
+  };
+type NewActor__904502479 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__781552358]>;
+    profiles : Map__230067015<Principal, Profile__413278821>
+  };
+type NewMessage__11650293 =
+  {
+    ciphertext : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type NewMessage__633497213 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type NewProfile__870807565 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__93347038;
+    status : Status__216529994;
+    workEmail : Text
+  };
+type Node__204828119<K, V> =
+  {#internal : Internal__283199666<K, V>; #leaf : Leaf__598469445<K, V>};
+type OldActor__1006435693 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [OldMessage__168392469]>;
+    profiles : Map__230067015<Principal, Profile__415376870>
+  };
+type OldActor__1039705793 = {};
+type OldActor__130694336 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__678077160]>;
+    profiles : Map__230067015<Principal, OldProfile__466092934>
+  };
+type OldActor__293720163 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__494754899]>;
+    profiles : Map__230067015<Principal, Profile__263381679>
+  };
+type OldActor__414626421 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [OldMessage__747910638]>;
+    profiles : Map__230067015<Principal, Profile__632657341>
+  };
+type OldActor__675047732 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__659739635]>;
+    profiles : Map__230067015<Principal, Profile__911836397>
+  };
+type OldActor__886664093 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__781552358]>;
+    profiles : Map__230067015<Principal, Profile__413278821>
+  };
+type OldMessage__168392469 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type OldMessage__747910638 =
+  {
+    ciphertext : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type OldProfile__466092934 =
+  {displayName : Text; principal : Principal; registeredAt : Nat};
+type Profile__197935537 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : UserId__343168941;
+    registeredAt : Timestamp__301639476;
+    role : Role__319959552;
+    status : Status__346292024;
+    workEmail : Text
+  };
+type Profile__263381679 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__188741906;
+    status : Status__592156065;
+    workEmail : Text
+  };
+type Profile__2656505 =
+  {displayName : Text; principal : Principal; registeredAt : Nat};
+type Profile__413278821 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__385987605;
+    status : Status__96802741;
+    workEmail : Text
+  };
+type Profile__415376870 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__221951646;
+    status : Status__468492581;
+    workEmail : Text
+  };
+type Profile__632657341 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__429787196;
+    status : Status__297375184;
+    workEmail : Text
+  };
+type Profile__911836397 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__416643811;
+    status : Status__946023953;
+    workEmail : Text
+  };
+type Role__188741906 = {#departmentAdmin; #member; #superAdmin};
+type Role__221951646 = {#departmentAdmin; #member; #superAdmin};
+type Role__319959552 = {#departmentAdmin; #member; #superAdmin};
+type Role__385987605 = {#departmentAdmin; #member; #superAdmin};
+type Role__416643811 = {#departmentAdmin; #member; #superAdmin};
+type Role__429787196 = {#departmentAdmin; #member; #superAdmin};
+type Role__93347038 = {#departmentAdmin; #member; #superAdmin};
+type Status__216529994 = {#approved; #denied; #pending; #suspended};
+type Status__297375184 = {#approved; #denied; #pending; #suspended};
+type Status__346292024 = {#approved; #denied; #pending; #suspended};
+type Status__468492581 = {#approved; #denied; #pending; #suspended};
+type Status__592156065 = {#approved; #denied; #pending; #suspended};
+type Status__946023953 = {#approved; #denied; #pending; #suspended};
+type Status__96802741 = {#approved; #denied; #pending; #suspended};
+type Timestamp__301639476 = Nat;
+type UserId__343168941 = Principal;
+type UserRole__91647283 = {#admin; #guest; #user};
+{
+  "20261025_120000" : OldActor__1039705793 -> NewActor__666861742;
+  "20261025_180000" : (old : OldActor__130694336) -> NewActor__244663399;
+  "20261025_190000" : (old : OldActor__886664093) -> NewActor__904502479;
+  "20261025_200000" : (old : OldActor__293720163) -> NewActor__1073511891;
+  "20261025_210000" : (old : OldActor__1006435693) -> NewActor__346813299;
+  "20261025_220000" : (old : OldActor__675047732) -> NewActor__266457383;
+  "20261025_230000" : (old : OldActor__414626421) -> NewActor__764466830
+}
+actor  {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__230067015<Principal, UserRole__91647283>
+    };
+  stable messages :
+    {
+      var root : Node__204828119<Principal, [Message__804209456]>;
+      var size : Nat__227979830
+    };
+  stable profiles :
+    {
+      var root : Node__204828119<Principal, Profile__197935537>;
+      var size : Nat__227979830
+    }
+};

@@ -1,0 +1,120 @@
+type Value = 
+ variant {
+   "bool": bool;
+   float: float64;
+   "int": int;
+   "nat": nat;
+   "null";
+   "text": text;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserId = principal;
+type Timestamp = nat;
+type Status = 
+ variant {
+   approved;
+   denied;
+   pending;
+   suspended;
+ };
+type Role = 
+ variant {
+   departmentAdmin;
+   member;
+   superAdmin;
+ };
+type Result__1 = 
+ variant {
+   err: Error;
+   ok;
+ };
+type Result = 
+ record {
+   hasMore: bool;
+   rows: vec vec Cell;
+ };
+type Profile = 
+ record {
+   department: text;
+   fullName: text;
+   isDemo: bool;
+   jobTitle: text;
+   "principal": UserId;
+   registeredAt: Timestamp;
+   role: Role;
+   status: Status;
+   workEmail: text;
+ };
+type Message = 
+ record {
+   content: text;
+   recipient: UserId;
+   sender: UserId;
+   timestamp: Timestamp;
+ };
+type Error = 
+ variant {
+   AmbiguousAttribute: record {
+                         field: text;
+                         sources: vec text;
+                       };
+   FrontendOriginMismatch: record {
+                             expected: vec text;
+                             got: text;
+                           };
+   FrontendOriginsNotConfigured;
+   MalformedCandid;
+   MissingField: text;
+   MixedSsoSources: record {
+                      otherKeys: vec text;
+                      ssoKeys: vec text;
+                    };
+   NoAttributes;
+   Stale: record {ageNs: nat;};
+   UnknownNonce;
+   UntrustedSsoSource: record {domain: text;};
+ };
+type DirectoryEntry = 
+ record {
+   displayName: text;
+   isDemo: bool;
+   "principal": UserId;
+ };
+type Cell = 
+ record {
+   name: text;
+   value: Value;
+ };
+service : {
+  _initialize_access_control: () -> ();
+  _internet_identity_sign_in_finish: () -> (Result__1);
+  _internet_identity_sign_in_start: () -> (blob);
+  appointDepartmentAdmin: (user: principal) -> (Profile);
+  approveUser: (user: principal) -> (Profile);
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  denyUser: (user: principal) -> (Profile);
+  execute: (qJson: text) -> (Result) query;
+  getApiDoc: () -> (text) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getDirectoryEntry: (user: principal) -> (opt DirectoryEntry) query;
+  getMyProfile: () -> (opt Profile) query;
+  getThread: (other: principal) -> (vec Message) query;
+  isCallerAdmin: () -> (bool) query;
+  listApprovedUsers: () -> (vec Profile) query;
+  listDirectory: () -> (vec DirectoryEntry) query;
+  listPendingRequests: () -> (vec Profile) query;
+  listSuspendedUsers: () -> (vec Profile) query;
+  registerProfile: (fullName: text, workEmail: text, department: text,
+   jobTitle: text) -> (Profile);
+  reinstateUser: (user: principal) -> (Profile);
+  removeDepartmentAdmin: (user: principal) -> (Profile);
+  schema: () -> (text) query;
+  sendMessage: (recipient: principal, content: text) -> (Message);
+  setDemoAccount: (user: principal, isDemo: bool) -> (Profile);
+  suspendUser: (user: principal) -> (Profile);
+}
