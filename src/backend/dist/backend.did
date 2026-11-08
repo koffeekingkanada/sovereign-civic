@@ -29,14 +29,28 @@ type Role =
    superAdmin;
  };
 type Result__1 = 
+ record {
+   hasMore: bool;
+   rows: vec vec Cell;
+ };
+type Result_1 = 
  variant {
    err: Error;
    ok;
  };
 type Result = 
- record {
-   hasMore: bool;
-   rows: vec vec Cell;
+ variant {
+   err: RedeemError;
+   ok: Profile;
+ };
+type RedeemError = 
+ variant {
+   cancelled;
+   expired;
+   notFound;
+   tooManyAttempts;
+   used;
+   wrongCode: record {remaining: nat;};
  };
 type Profile = 
  record {
@@ -56,6 +70,29 @@ type Message =
    recipient: UserId;
    sender: UserId;
    timestamp: Timestamp;
+ };
+type InviteStatus = 
+ variant {
+   cancelled;
+   expired;
+   pending;
+   used;
+ };
+type Invite = 
+ record {
+   code: text;
+   createdAt: Timestamp;
+   createdBy: UserId;
+   department: text;
+   expiresAt: Timestamp;
+   fullName: text;
+   id: nat;
+   linkToken: text;
+   phone: text;
+   role: Role;
+   status: InviteStatus;
+   workEmail: text;
+   wrongCodeAttempts: nat;
  };
 type Error = 
  variant {
@@ -92,13 +129,16 @@ type Cell =
  };
 service : {
   _initialize_access_control: () -> ();
-  _internet_identity_sign_in_finish: () -> (Result__1);
+  _internet_identity_sign_in_finish: () -> (Result_1);
   _internet_identity_sign_in_start: () -> (blob);
   appointDepartmentAdmin: (user: principal) -> (Profile);
   approveUser: (user: principal) -> (Profile);
   assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  cancelInvite: (inviteId: nat) -> (Invite);
+  createInvite: (fullName: text, workEmail: text, phone: text, department:
+   text, role: Role) -> (Invite);
   denyUser: (user: principal) -> (Profile);
-  execute: (qJson: text) -> (Result) query;
+  execute: (qJson: text) -> (Result__1) query;
   getApiDoc: () -> (text) query;
   getCallerUserRole: () -> (UserRole) query;
   getDirectoryEntry: (user: principal) -> (opt DirectoryEntry) query;
@@ -107,8 +147,10 @@ service : {
   isCallerAdmin: () -> (bool) query;
   listApprovedUsers: () -> (vec Profile) query;
   listDirectory: () -> (vec DirectoryEntry) query;
+  listInvites: () -> (vec Invite) query;
   listPendingRequests: () -> (vec Profile) query;
   listSuspendedUsers: () -> (vec Profile) query;
+  redeemInvite: (linkToken: text, code: text) -> (Result);
   registerProfile: (fullName: text, workEmail: text, department: text,
    jobTitle: text) -> (Profile);
   reinstateUser: (user: principal) -> (Profile);

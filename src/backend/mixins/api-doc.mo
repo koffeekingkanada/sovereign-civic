@@ -27,15 +27,15 @@ mixin () {
     "Such a delegation acts with the user's full authority in this app until it\n" #
     "expires.\n" #
     "\n" #
-    "Registration is a prerequisite. A direct API caller must first call\n" #
-    "`registerProfile` once as a signed-in caller; there is no separate initializer.\n" #
-    "The FIRST non-anonymous principal to register becomes the Super Admin with\n" #
-    "status `approved`. Every subsequent registrant is a `member` with status\n" #
-    "`pending` until a Super Admin or a Department Admin of the same department\n" #
-    "approves it. A principal that never signed in through the app's own frontend is\n" #
-    "unregistered even when it belongs to the app's owner, and a signed-in caller\n" #
-    "derived against a different origin is a different principal than the one the\n" #
-    "frontend registered.\n" #
+    "Registration is a prerequisite. Access is by invitation: a direct API caller\n" #
+    "must be invited by an admin and then call `redeemInvite` once as a signed-in\n" #
+    "caller to create an approved account. The FIRST non-anonymous principal to\n" #
+    "register through `registerProfile` becomes the Super Admin with status\n" #
+    "`approved`; every subsequent `registerProfile` registrant is a `member` with\n" #
+    "status `pending`. A principal that never signed in through the app's own\n" #
+    "frontend is unregistered even when it belongs to the app's owner, and a\n" #
+    "signed-in caller derived against a different origin is a different principal\n" #
+    "than the one the frontend registered.\n" #
     "\n" #
     "Super Admin resolution: the Super Admin is the first registrant and is stored as\n" #
     "an ordinary profile with role `superAdmin` and status `approved`. Super Admin\n" #
@@ -135,14 +135,54 @@ mixin () {
     "target cannot be the Super Admin. Demo accounts carry `isDemo = true`, which the\n" #
     "directory exposes so the UI can show a DEMO badge.\n" #
     "\n" #
+    "## Invitations\n" #
+    "\n" #
+    "Access is by invitation. A signed-in user without an approved account sees only\n" #
+    "the message \"Access is by invitation. Contact your organization's administrator.\"\n" #
+    "and cannot use the directory or messaging. Admins create invites; the invite\n" #
+    "produces a single-use link token and a separate 6-digit code, both shown to the\n" #
+    "creating admin. The app never delivers the link or the code automatically.\n" #
+    "\n" #
+    "### createInvite(fullName, workEmail, phone, department : Text, role : Role) : async Invite\n" #
+    "Admins only. Creates a single-use invite and returns it, including `linkToken`\n" #
+    "and `code`. All four text fields are trimmed and must be non-empty. A Department\n" #
+    "Admin may only invite into their own department (trimmed, case-insensitive); the\n" #
+    "Super Admin may invite into any department. The invite starts `pending` and\n" #
+    "expires 7 days after creation.\n" #
+    "\n" #
+    "### listInvites() : async [Invite]\n" #
+    "Admins only. Returns invites in the admin's scope (the Super Admin sees all, a\n" #
+    "Department Admin sees only their own department), newest first. A pending invite\n" #
+    "whose expiry has passed is reported as `expired`.\n" #
+    "\n" #
+    "### cancelInvite(inviteId : Nat) : async Invite\n" #
+    "Admins only. Cancels a `pending` invite in the admin's scope. Traps when the\n" #
+    "invite is not found, is out of scope, or is already `used`, `expired` or\n" #
+    "`cancelled`.\n" #
+    "\n" #
+    "### redeemInvite(linkToken : Text, code : Text) : async Result<Profile, RedeemError>\n" #
+    "Signed-in (non-anonymous) callers. Redeems an invite from its link token plus\n" #
+    "the 6-digit code. On success the caller's account is created and `approved` with\n" #
+    "the invite's department and role, and the invite becomes `used`. Failures are\n" #
+    "returned as `#err(RedeemError)`, not traps, so a wrong-code attempt is recorded:\n" #
+    "`#notFound`, `#used`, `#expired`, `#cancelled`, `#wrongCode({ remaining })` and\n" #
+    "`#tooManyAttempts`. After 5 wrong codes the invite is cancelled and further\n" #
+    "attempts return `#cancelled`. Anonymous callers trap.\n" #
+    "\n" #
+    "Invite status is `#pending | #used | #expired | #cancelled`. An invite is\n" #
+    "single-use: once `used` it can never be redeemed again. `Invite` is\n" #
+    "`{ id; fullName; workEmail; phone; department; role; linkToken; code; status;\n" #
+    "createdBy; createdAt; expiresAt; wrongCodeAttempts }`.\n" #
+    "\n" #
     "### Generic authorization and OQL endpoints\n" #
     "The authorization component's methods (such as `getCallerUserRole`,\n" #
     "`isCallerAdmin`, `assignCallerUserRole`, `_initialize_access_control`) are also\n" #
     "exposed but are NOT what gates this app: access is decided solely by the profile\n" #
     "role and status above. The OQL endpoints `schema` and `execute` expose the\n" #
     "`profile` table to a signed-in caller as their own row only (other users' work\n" #
-    "emails are not readable, even by admins), and the `message` table is readable\n" #
-    "only by the canister controllers, never by ordinary callers.\n" #
+    "emails are not readable, even by admins), and the `message` and `invite` tables\n" #
+    "are readable only by the canister controllers, never by ordinary callers. The\n" #
+    "`invite` table omits the `linkToken` and `code` columns entirely.\n" #
     "\n" #
     "## Units and encodings\n" #
     "\n" #

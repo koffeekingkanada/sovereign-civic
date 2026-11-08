@@ -73,10 +73,10 @@ describe("VaultWheel labelled circles", () => {
 
     // Each labelled circle is a percentage-sized box, not a fixed pixel size,
     // so it scales with the wheel on a narrow viewport. The accepted change
-    // enlarged the circles (32.4% -> 34%) so no label is cut off on phones.
+    // shrinks the circles by 10% (34% -> 30.6%).
     const node = within(wheel).getByText("Directory")
       .parentElement as HTMLElement;
-    expect(node.className).toContain("size-[34%]");
+    expect(node.className).toContain("size-[30.6%]");
     // The label is allowed to wrap rather than being clipped to one line.
     const label = within(wheel).getByText("Directory");
     expect(label.className).toContain("line-clamp-3");

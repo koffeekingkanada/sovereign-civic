@@ -1,6 +1,6 @@
 import { createActor } from "@/backend";
 import { Status } from "@/backend";
-import type { DirectoryEntry, Message, Profile } from "@/backend";
+import type { DirectoryEntry, Message, Profile, Result } from "@/backend";
 import { useActor } from "@caffeineai/core-infrastructure";
 import type { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,6 +112,36 @@ export function useSendMessage(other: Principal | null) {
       void queryClient.invalidateQueries({
         queryKey: profileKeys.thread(otherKey),
       });
+    },
+  });
+}
+
+export interface RedeemInviteInput {
+  linkToken: string;
+  code: string;
+}
+
+/**
+ * Redeem an invite from its link token and 6-digit code. The backend returns a
+ * Result value: a matching pair creates and approves the caller's account, and
+ * every failure (wrong code, expired, cancelled, used, not found) is returned
+ * as a value rather than thrown.
+ */
+export function useRedeemInvite() {
+  const { actor } = useActor(createActor);
+  const queryClient = useQueryClient();
+  return useMutation<Result, Error, RedeemInviteInput>({
+    mutationFn: async ({ linkToken, code }) => {
+      if (!actor) throw new Error("Backend is not ready");
+      return actor.redeemInvite(linkToken, code);
+    },
+    onSuccess: (result) => {
+      if (result.__kind__ === "ok") {
+        void queryClient.invalidateQueries({ queryKey: profileKeys.me });
+        void queryClient.invalidateQueries({
+          queryKey: profileKeys.directory,
+        });
+      }
     },
   });
 }

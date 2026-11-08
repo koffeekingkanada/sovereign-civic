@@ -1,5 +1,5 @@
-import { Role, Status } from "@/backend";
-import type { Profile, backendInterface } from "@/backend";
+import { InviteStatus, Role, Status } from "@/backend";
+import type { Invite, Profile, backendInterface } from "@/backend";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -14,6 +14,26 @@ import {
   makeProfile,
 } from "@/__tests__/support";
 import { AdminPage } from "@/pages/AdminPage";
+
+/** A typed invite fixture; the backend owns the real token and code values. */
+function makeInvite(overrides: Partial<Invite> = {}): Invite {
+  return {
+    id: 1n,
+    status: InviteStatus.pending,
+    expiresAt: 1_700_000_000_000_000_000n,
+    workEmail: "new.staff@finance.gov",
+    code: "123456",
+    createdAt: 1_700_000_000_000_000_000n,
+    createdBy: ME,
+    role: Role.member,
+    fullName: "New Staff",
+    wrongCodeAttempts: 0n,
+    linkToken: "inv-1-1700000000000000000",
+    phone: "+1 555 010 4477",
+    department: "Finance",
+    ...overrides,
+  };
+}
 
 /**
  * AdminPage journeys against a typed local actor mock. Scoping and
@@ -196,6 +216,22 @@ describe("Admin page for a Department Admin", () => {
     expect(await screen.findByText("No pending requests")).toBeInTheDocument();
     expect(screen.getByText("No approved users yet")).toBeInTheDocument();
   });
+
+  it("keeps the existing review sections present for a Department Admin", async () => {
+    // The accepted change adds invite sections to this page; the existing
+    // pending/approved/suspended sections must remain reachable alongside them.
+    renderAdmin(deptAdmin);
+
+    expect(
+      await screen.findByRole("heading", { name: "Pending requests" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Approved users" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Suspended users" }),
+    ).toBeInTheDocument();
+  });
 });
 
 describe("Admin page suspended users section", () => {
@@ -374,6 +410,212 @@ describe("Admin page for the Super Admin", () => {
     await user.click(within(row).getByRole("button", { name: /unmark demo/i }));
     await waitFor(() => {
       expect(actor.setDemoAccount).toHaveBeenCalledWith(THIRD, false);
+    });
+  });
+});
+
+describe("Admin page invite creation", () => {
+  it("creates an invite and shows the single-use link and the separate 6-digit code", async () => {
+    const user = userEvent.setup();
+    vi.mocked(actor.listPendingRequests).mockResolvedValue([]);
+    vi.mocked(actor.listApprovedUsers).mockResolvedValue([superAdmin]);
+    vi.mocked(actor.listInvites).mockResolvedValue([]);
+    const created = makeInvite({
+      fullName: "New Staff",
+      workEmail: "new.staff@finance.gov",
+      phone: "+1 555 010 4477",
+      department: "Finance",
+      role: Role.member,
+      linkToken: "inv-1-1700000000000000000",
+      code: "123456",
+    });
+    vi.mocked(actor.createInvite).mockResolvedValue(created);
+    renderAdmin(superAdmin);
+
+    await user.type(await screen.findByLabelText(/full name/i), "New Staff");
+    await user.type(
+      screen.getByLabelText(/work email/i),
+      "new.staff@finance.gov",
+    );
+    await user.type(screen.getByLabelText(/phone number/i), "+1 555 010 4477");
+    await user.type(screen.getByLabelText(/department/i), "Finance");
+    await user.click(screen.getByRole("button", { name: /create invite/i }));
+
+    await waitFor(() => {
+      expect(actor.createInvite).toHaveBeenCalledWith(
+        "New Staff",
+        "new.staff@finance.gov",
+        "+1 555 010 4477",
+        "Finance",
+        Role.member,
+      );
+    });
+
+    // The link and the code are shown as two separate values.
+    const link = await screen.findByLabelText(/invite link/i, {
+      selector: "input",
+    });
+    expect((link as HTMLInputElement).value).toContain(
+      "inv-1-1700000000000000000",
+    );
+    const code = screen.getByLabelText(/6-digit code/i, { selector: "input" });
+    expect(code).toHaveValue("123456");
+    expect(screen.getByText(/invite ready for new staff/i)).toBeInTheDocument();
+  });
+
+  it("reports a backend rejection without showing a link or code", async () => {
+    const user = userEvent.setup();
+    vi.mocked(actor.listPendingRequests).mockResolvedValue([]);
+    vi.mocked(actor.listApprovedUsers).mockResolvedValue([superAdmin]);
+    vi.mocked(actor.listInvites).mockResolvedValue([]);
+    vi.mocked(actor.createInvite).mockRejectedValue(
+      new Error("Only a Super Admin may grant the Super Admin role."),
+    );
+    renderAdmin(superAdmin);
+
+    await user.type(await screen.findByLabelText(/full name/i), "New Staff");
+    await user.type(
+      screen.getByLabelText(/work email/i),
+      "new.staff@finance.gov",
+    );
+    await user.type(screen.getByLabelText(/phone number/i), "+1 555 010 4477");
+    await user.type(screen.getByLabelText(/department/i), "Finance");
+    await user.click(screen.getByRole("button", { name: /create invite/i }));
+
+    expect(
+      await screen.findByText(/only a super admin may grant/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/invite link/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/6-digit code/i)).not.toBeInTheDocument();
+  });
+
+  it("locks a Department Admin to their own department and hides the Super Admin role", async () => {
+    vi.mocked(actor.listPendingRequests).mockResolvedValue([]);
+    vi.mocked(actor.listApprovedUsers).mockResolvedValue([deptAdmin]);
+    vi.mocked(actor.listInvites).mockResolvedValue([]);
+    renderAdmin(deptAdmin);
+
+    const department = await screen.findByLabelText(/department/i);
+    expect(department).toHaveValue("Finance");
+    expect(department).toHaveAttribute("readonly");
+    expect(screen.getByText(/locked to your department/i)).toBeInTheDocument();
+
+    const role = screen.getByLabelText(/role/i);
+    const options = within(role).getAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual([
+      "Member",
+      "Department Admin",
+    ]);
+  });
+
+  it("lets a Super Admin choose any department and grant the Super Admin role", async () => {
+    vi.mocked(actor.listPendingRequests).mockResolvedValue([]);
+    vi.mocked(actor.listApprovedUsers).mockResolvedValue([superAdmin]);
+    vi.mocked(actor.listInvites).mockResolvedValue([]);
+    renderAdmin(superAdmin);
+
+    const department = await screen.findByLabelText(/department/i);
+    expect(department).not.toHaveAttribute("readonly");
+    expect(department).toHaveValue("");
+
+    const role = screen.getByLabelText(/role/i);
+    const options = within(role).getAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual([
+      "Member",
+      "Department Admin",
+      "Super Admin",
+    ]);
+  });
+});
+
+describe("Admin page invite list", () => {
+  it("lists every invite with its status, creator and creation time", async () => {
+    vi.mocked(actor.listPendingRequests).mockResolvedValue([]);
+    vi.mocked(actor.listApprovedUsers).mockResolvedValue([superAdmin]);
+    vi.mocked(actor.listInvites).mockResolvedValue([
+      makeInvite({
+        id: 1n,
+        fullName: "Pending Person",
+        status: InviteStatus.pending,
+        createdBy: SUPER,
+      }),
+      makeInvite({
+        id: 2n,
+        fullName: "Used Person",
+        status: InviteStatus.used,
+        createdBy: SUPER,
+      }),
+      makeInvite({
+        id: 3n,
+        fullName: "Expired Person",
+        status: InviteStatus.expired,
+        createdBy: SUPER,
+      }),
+      makeInvite({
+        id: 4n,
+        fullName: "Cancelled Person",
+        status: InviteStatus.cancelled,
+        createdBy: SUPER,
+      }),
+    ]);
+    renderAdmin(superAdmin);
+
+    expect(await screen.findByText("Pending Person")).toBeInTheDocument();
+    expect(screen.getByText("Used Person")).toBeInTheDocument();
+    expect(screen.getByText("Expired Person")).toBeInTheDocument();
+    expect(screen.getByText("Cancelled Person")).toBeInTheDocument();
+
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.getByText("Used")).toBeInTheDocument();
+    expect(screen.getByText("Expired")).toBeInTheDocument();
+    expect(screen.getByText("Cancelled")).toBeInTheDocument();
+
+    // The creator and the creation time are shown for each invite.
+    expect(screen.getAllByText(/created by/i).length).toBe(4);
+    expect(screen.getAllByText(/on /i).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("cancels a pending invite and leaves non-pending invites without a cancel action", async () => {
+    const user = userEvent.setup();
+    vi.mocked(actor.listPendingRequests).mockResolvedValue([]);
+    vi.mocked(actor.listApprovedUsers).mockResolvedValue([superAdmin]);
+    vi.mocked(actor.listInvites).mockResolvedValue([
+      makeInvite({ id: 1n, fullName: "Pending Person" }),
+      makeInvite({
+        id: 2n,
+        fullName: "Used Person",
+        status: InviteStatus.used,
+      }),
+    ]);
+    vi.mocked(actor.cancelInvite).mockResolvedValue(
+      makeInvite({
+        id: 1n,
+        fullName: "Pending Person",
+        status: InviteStatus.cancelled,
+      }),
+    );
+    renderAdmin(superAdmin);
+
+    const pendingRow = (await screen.findByText("Pending Person")).closest(
+      "li",
+    ) as HTMLElement;
+    const usedRow = screen
+      .getByText("Used Person")
+      .closest("li") as HTMLElement;
+
+    // Only the pending invite offers a cancel action.
+    expect(
+      within(pendingRow).getByRole("button", { name: /cancel/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(usedRow).queryByRole("button", { name: /cancel/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      within(pendingRow).getByRole("button", { name: /cancel/i }),
+    );
+    await waitFor(() => {
+      expect(actor.cancelInvite).toHaveBeenCalledWith(1n);
     });
   });
 });

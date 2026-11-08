@@ -15,13 +15,38 @@ import { AboutPage } from "@/pages/AboutPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { DirectoryPage } from "@/pages/DirectoryPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { RedeemInvitePage } from "@/pages/RedeemInvitePage";
 import { useEffect, useState } from "react";
+
+/**
+ * The single-use invite token carried by an invite link. The link opens the app
+ * with `?invite=<linkToken>` (or `#invite=<linkToken>`); the token is read once
+ * on mount so it survives the Internet Identity sign-in round trip.
+ */
+function readInviteToken(): string | null {
+  if (typeof window === "undefined" || !window.location) return null;
+  try {
+    const fromQuery = new URLSearchParams(window.location.search).get("invite");
+    if (fromQuery) return fromQuery;
+    const hash = window.location.hash.replace(/^#/, "");
+    if (hash) {
+      const fromHash = new URLSearchParams(hash).get("invite");
+      if (fromHash) return fromHash;
+    }
+  } catch {
+    // A malformed URL must not stop the app from rendering.
+  }
+  return null;
+}
 
 export default function App() {
   const { isAuthenticated, isInitializing, signOut } = useAuth();
   const [nav, setNav] = useState<NavKey>("directory");
   const [publicView, setPublicView] = useState<"login" | "about">("login");
   const [editingProfile, setEditingProfile] = useState(false);
+  const [inviteToken, setInviteToken] = useState<string | null>(() =>
+    readInviteToken(),
+  );
   // The entry video plays at most once per browser session; reduced-motion
   // users and repeat visits within the session skip it entirely.
   const [entryVideoDone, setEntryVideoDone] = useState(() =>
@@ -55,6 +80,26 @@ export default function App() {
             Loading secure session…
           </p>
         </div>
+      </Layout>
+    );
+  }
+
+  // An invite link leads to Internet Identity sign-in and then to the 6-digit
+  // code entry screen, regardless of any existing profile.
+  if (inviteToken) {
+    if (!isAuthenticated) {
+      return (
+        <Layout header={null}>
+          <LoginPage onOpenAbout={() => setPublicView("about")} />
+        </Layout>
+      );
+    }
+    return (
+      <Layout header={null}>
+        <RedeemInvitePage
+          linkToken={inviteToken}
+          onRedeemed={() => setInviteToken(null)}
+        />
       </Layout>
     );
   }
@@ -105,7 +150,9 @@ export default function App() {
     );
   }
 
-  if (!me || editingProfile) {
+  // A signed-in caller with no profile, or one who is not approved, sees only
+  // the invitation message. There is no public sign-up path.
+  if (!me || !isApproved) {
     return (
       <Layout
         header={
@@ -114,25 +161,17 @@ export default function App() {
             onNavigate={setNav}
             isAuthenticated={isAuthenticated}
             displayName={me?.fullName}
-            hideNav={!isApproved}
-            showAdmin={isAdmin}
+            hideNav
             onSignOut={handleSignOut}
           />
         }
       >
-        <SignupForm
-          profile={me}
-          onDone={() => setEditingProfile(false)}
-          onCancel={me ? () => setEditingProfile(false) : undefined}
-        />
+        <StatusScreen />
       </Layout>
     );
   }
 
-  if (!isApproved) {
-    const incomplete =
-      me.status === Status.pending &&
-      (!me.workEmail.trim() || !me.department.trim() || !me.jobTitle.trim());
+  if (editingProfile) {
     return (
       <Layout
         header={
@@ -141,14 +180,15 @@ export default function App() {
             onNavigate={setNav}
             isAuthenticated={isAuthenticated}
             displayName={me.fullName}
-            hideNav
+            showAdmin={isAdmin}
             onSignOut={handleSignOut}
           />
         }
       >
-        <StatusScreen
+        <SignupForm
           profile={me}
-          onEditDetails={incomplete ? () => setEditingProfile(true) : undefined}
+          onDone={() => setEditingProfile(false)}
+          onCancel={() => setEditingProfile(false)}
         />
       </Layout>
     );

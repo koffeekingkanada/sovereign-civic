@@ -125,54 +125,51 @@ describe("Super Admin", () => {
 });
 
 describe("new user sign-up", () => {
-  it("lands on the status screen as Pending with only the awaiting message", async () => {
-    const user = userEvent.setup();
-    const pending = makeProfile({ status: Status.pending });
-    vi.mocked(actor.getMyProfile)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValue(pending);
-    vi.mocked(actor.registerProfile).mockResolvedValue(pending);
+  it("shows only the invitation message to a signed-in user with no profile", async () => {
+    // The accepted change removes the public access-request form: a signed-in
+    // caller the backend has no profile for sees only the invitation message.
+    vi.mocked(actor.getMyProfile).mockResolvedValue(null);
     renderApp();
 
-    await user.type(await screen.findByLabelText(/full name/i), "Ada Lovelace");
-    await user.type(screen.getByLabelText(/work email/i), "ada@finance.gov");
-    await user.type(screen.getByLabelText(/department or team/i), "Finance");
-    await user.type(screen.getByLabelText(/job title/i), "Analyst");
-    await user.click(screen.getByRole("button", { name: /submit request/i }));
-
     expect(await screen.findByText(AWAITING_MESSAGE)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /request access/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit request/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /^Directory$/ }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /^(Directory|Admin)$/ }),
     ).not.toBeInTheDocument();
+    expect(actor.registerProfile).not.toHaveBeenCalled();
     expect(actor.listDirectory).not.toHaveBeenCalled();
     expect(actor.getThread).not.toHaveBeenCalled();
   });
+});
 
-  it("validates the sign-up form and does not call the backend when fields are empty", async () => {
-    const user = userEvent.setup();
-    renderApp();
-    await user.click(
-      await screen.findByRole("button", { name: /submit request/i }),
-    );
-    expect((await screen.findAllByText("This field is required.")).length).toBe(
-      4,
-    );
-    expect(actor.registerProfile).not.toHaveBeenCalled();
-  });
+describe("a signed-in user with no profile yet", () => {
+  it("is not shown the directory or admin navigation", async () => {
+    // The accepted change removes the public access-request form; a signed-in
+    // caller the backend has no profile for must still be gated away from the
+    // directory and admin console, whatever screen replaces the form.
+    vi.mocked(actor.getMyProfile).mockResolvedValue(null);
+    const { container } = renderApp();
 
-  it("rejects a malformed work email in the sign-up form", async () => {
-    const user = userEvent.setup();
-    renderApp();
-    await user.type(await screen.findByLabelText(/full name/i), "Ada");
-    await user.type(screen.getByLabelText(/work email/i), "not-an-email");
-    await user.type(screen.getByLabelText(/department or team/i), "Fin");
-    await user.type(screen.getByLabelText(/job title/i), "Analyst");
-    await user.click(screen.getByRole("button", { name: /submit request/i }));
-    expect(await screen.findByText(/valid email address/i)).toBeInTheDocument();
-    expect(actor.registerProfile).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(actor.getMyProfile).toHaveBeenCalled();
+    });
+    expect(
+      screen.queryByRole("heading", { name: /^Directory$/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^(Directory|About|Admin)$/ }),
+    ).not.toBeInTheDocument();
+    expect((container.textContent ?? "").trim().length).toBeGreaterThan(0);
+    expect(actor.listDirectory).not.toHaveBeenCalled();
+    expect(actor.listPendingRequests).not.toHaveBeenCalled();
   });
 });
 
@@ -187,12 +184,14 @@ describe("non-Approved users see only the status screen", () => {
     );
     renderApp();
 
+    // The accepted change replaces the awaiting-approval screen with a single
+    // invitation message: no name heading, no status badge, no action.
     expect(await screen.findByText(AWAITING_MESSAGE)).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Ada Lovelace" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: "Ada Lovelace" }),
+    ).not.toBeInTheDocument();
     if (badge) {
-      expect(screen.getByText(badge)).toBeInTheDocument();
+      expect(screen.queryByText(badge)).not.toBeInTheDocument();
     }
     expect(
       screen.queryByRole("heading", { name: /^Directory$/ }),

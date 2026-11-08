@@ -31,6 +31,25 @@ export type Error = { 'FrontendOriginsNotConfigured' : null } |
   { 'UntrustedSsoSource' : { 'domain' : string } } |
   { 'MissingField' : string } |
   { 'FrontendOriginMismatch' : { 'got' : string, 'expected' : Array<string> } };
+export interface Invite {
+  'id' : bigint,
+  'status' : InviteStatus,
+  'expiresAt' : Timestamp,
+  'workEmail' : string,
+  'code' : string,
+  'createdAt' : Timestamp,
+  'createdBy' : UserId,
+  'role' : Role,
+  'fullName' : string,
+  'wrongCodeAttempts' : bigint,
+  'linkToken' : string,
+  'phone' : string,
+  'department' : string,
+}
+export type InviteStatus = { 'cancelled' : null } |
+  { 'expired' : null } |
+  { 'pending' : null } |
+  { 'used' : null };
 export interface Message {
   'content' : string,
   'recipient' : UserId,
@@ -48,9 +67,17 @@ export interface Profile {
   'department' : string,
   'registeredAt' : Timestamp,
 }
-export interface Result { 'hasMore' : boolean, 'rows' : Array<Array<Cell>> }
-export type Result__1 = { 'ok' : null } |
+export type RedeemError = { 'wrongCode' : { 'remaining' : bigint } } |
+  { 'cancelled' : null } |
+  { 'expired' : null } |
+  { 'tooManyAttempts' : null } |
+  { 'used' : null } |
+  { 'notFound' : null };
+export type Result = { 'ok' : Profile } |
+  { 'err' : RedeemError };
+export type Result_1 = { 'ok' : null } |
   { 'err' : Error };
+export interface Result__1 { 'hasMore' : boolean, 'rows' : Array<Array<Cell>> }
 export type Role = { 'member' : null } |
   { 'departmentAdmin' : null } |
   { 'superAdmin' : null };
@@ -71,13 +98,15 @@ export type Value = { 'int' : bigint } |
   { 'text' : string };
 export interface _SERVICE {
   '_initialize_access_control' : ActorMethod<[], undefined>,
-  '_internet_identity_sign_in_finish' : ActorMethod<[], Result__1>,
+  '_internet_identity_sign_in_finish' : ActorMethod<[], Result_1>,
   '_internet_identity_sign_in_start' : ActorMethod<[], Uint8Array>,
   'appointDepartmentAdmin' : ActorMethod<[Principal], Profile>,
   'approveUser' : ActorMethod<[Principal], Profile>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'cancelInvite' : ActorMethod<[bigint], Invite>,
+  'createInvite' : ActorMethod<[string, string, string, string, Role], Invite>,
   'denyUser' : ActorMethod<[Principal], Profile>,
-  'execute' : ActorMethod<[string], Result>,
+  'execute' : ActorMethod<[string], Result__1>,
   'getApiDoc' : ActorMethod<[], string>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDirectoryEntry' : ActorMethod<[Principal], [] | [DirectoryEntry]>,
@@ -86,8 +115,10 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listApprovedUsers' : ActorMethod<[], Array<Profile>>,
   'listDirectory' : ActorMethod<[], Array<DirectoryEntry>>,
+  'listInvites' : ActorMethod<[], Array<Invite>>,
   'listPendingRequests' : ActorMethod<[], Array<Profile>>,
   'listSuspendedUsers' : ActorMethod<[], Array<Profile>>,
+  'redeemInvite' : ActorMethod<[string, string], Result>,
   'registerProfile' : ActorMethod<[string, string, string, string], Profile>,
   'reinstateUser' : ActorMethod<[Principal], Profile>,
   'removeDepartmentAdmin' : ActorMethod<[Principal], Profile>,

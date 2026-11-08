@@ -324,3 +324,181 @@ describe("suspending and reinstating a user preserves their profile and messages
     await expect(actor.reinstateUser(targetId)).rejects.toThrow();
   });
 });
+
+describe("invites are created, listed, redeemed and cancelled in the backend", () => {
+  // `alice` is the first registrant and therefore the Super Admin. Each test
+  // creates its own invite so it does not depend on the order the tests ran in.
+  async function createInvite(
+    fullName: string,
+    department = "Finance",
+    role: { member: null } | { departmentAdmin: null } | { superAdmin: null } = {
+      member: null,
+    },
+  ) {
+    actor.setIdentity(alice);
+    return actor.createInvite(
+      fullName,
+      `${fullName.toLowerCase().replace(/\s+/g, ".")}@gov.test`,
+      "+1 555 010 4477",
+      department,
+      role,
+    );
+  }
+
+  it("creates a Pending invite with a link token and a separate 6-digit code", async () => {
+    const invite = await createInvite("Invite One");
+    expect(invite.status).toEqual({ pending: null });
+    expect(invite.fullName).toBe("Invite One");
+    expect(invite.department).toBe("Finance");
+    expect(invite.role).toEqual({ member: null });
+    expect(invite.linkToken.length).toBeGreaterThan(0);
+    expect(invite.code).toMatch(/^\d{6}$/);
+    expect(invite.wrongCodeAttempts).toBe(0n);
+    // The link token and the code are distinct values.
+    expect(invite.linkToken).not.toBe(invite.code);
+    // The invite expires 7 days after creation.
+    expect(invite.expiresAt - invite.createdAt).toBe(604_800_000_000_000n);
+  });
+
+  it("lists every invite with its status, creator and creation time", async () => {
+    const invite = await createInvite("Invite Listed");
+    actor.setIdentity(alice);
+    const invites = await actor.listInvites();
+    const found = invites.find((i) => i.id === invite.id);
+    expect(found).toBeDefined();
+    expect(found!.status).toEqual({ pending: null });
+    expect(found!.createdBy.toText()).toBe(alice.getPrincipal().toText());
+    expect(found!.createdAt).toBe(invite.createdAt);
+  });
+
+  it("redeems a matching link and code into an Approved account with the set department and role", async () => {
+    const invite = await createInvite("Invite Redeem", "Finance", {
+      departmentAdmin: null,
+    });
+    const newcomer = createIdentity("invite-redeem-newcomer");
+    actor.setIdentity(newcomer);
+
+    const result = await actor.redeemInvite(invite.linkToken, invite.code);
+    expect(result).toHaveProperty("ok");
+    const profile = (result as { ok: { status: unknown; role: unknown; department: string } }).ok;
+    expect(profile.status).toEqual({ approved: null });
+    expect(profile.role).toEqual({ departmentAdmin: null });
+    expect(profile.department).toBe("Finance");
+
+    // The redeemed account can reach the directory.
+    const directory = await actor.listDirectory();
+    expect(directory.map((entry) => entry.displayName)).toContain(
+      "Invite Redeem",
+    );
+  });
+
+  it("marks a redeemed invite Used and refuses a second redemption", async () => {
+    const invite = await createInvite("Invite Single Use");
+    const first = createIdentity("invite-single-first");
+    actor.setIdentity(first);
+    const ok = await actor.redeemInvite(invite.linkToken, invite.code);
+    expect(ok).toHaveProperty("ok");
+
+    actor.setIdentity(alice);
+    const listed = (await actor.listInvites()).find((i) => i.id === invite.id);
+    expect(listed!.status).toEqual({ used: null });
+
+    const second = createIdentity("invite-single-second");
+    actor.setIdentity(second);
+    const again = await actor.redeemInvite(invite.linkToken, invite.code);
+    expect(again).toEqual({ err: { used: null } });
+  });
+
+  it("counts a wrong code and cancels the invite after five wrong attempts", async () => {
+    const invite = await createInvite("Invite Wrong Code");
+    const guesser = createIdentity("invite-wrong-guesser");
+    actor.setIdentity(guesser);
+
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      const result = await actor.redeemInvite(invite.linkToken, "000000");
+      expect(result).toEqual({
+        err: { wrongCode: { remaining: BigInt(5 - attempt) } },
+      });
+    }
+
+    // The fifth wrong code cancels the invite.
+    const fifth = await actor.redeemInvite(invite.linkToken, "000000");
+    expect(fifth).toEqual({ err: { tooManyAttempts: null } });
+
+    actor.setIdentity(alice);
+    const listed = (await actor.listInvites()).find((i) => i.id === invite.id);
+    expect(listed!.status).toEqual({ cancelled: null });
+
+    // The correct code no longer works once the invite is cancelled.
+    actor.setIdentity(guesser);
+    const afterCancel = await actor.redeemInvite(invite.linkToken, invite.code);
+    expect(afterCancel).toEqual({ err: { cancelled: null } });
+  });
+
+  it("cancels a pending invite so it can no longer be redeemed", async () => {
+    const invite = await createInvite("Invite Cancelled");
+    actor.setIdentity(alice);
+    const cancelled = await actor.cancelInvite(invite.id);
+    expect(cancelled.status).toEqual({ cancelled: null });
+
+    const newcomer = createIdentity("invite-cancelled-newcomer");
+    actor.setIdentity(newcomer);
+    const result = await actor.redeemInvite(invite.linkToken, invite.code);
+    expect(result).toEqual({ err: { cancelled: null } });
+  });
+
+  it("rejects an unknown link token", async () => {
+    const stranger = createIdentity("invite-unknown-token");
+    actor.setIdentity(stranger);
+    const result = await actor.redeemInvite("no-such-token", "123456");
+    expect(result).toEqual({ err: { notFound: null } });
+  });
+
+  it("lets a Department Admin invite only into their own department", async () => {
+    // Promote a member to Department Admin of Finance.
+    const deptAdmin = createIdentity("invite-dept-admin");
+    const deptProfile = await signUp(deptAdmin, "Dana Dept", "Finance");
+    actor.setIdentity(alice);
+    await actor.approveUser(deptProfile.principal);
+    await actor.appointDepartmentAdmin(deptProfile.principal);
+
+    actor.setIdentity(deptAdmin);
+    const own = await actor.createInvite(
+      "Own Dept",
+      "own.dept@gov.test",
+      "+1 555 010 0001",
+      "Finance",
+      { member: null },
+    );
+    expect(own.department).toBe("Finance");
+
+    // A different department is refused.
+    await expect(
+      actor.createInvite(
+        "Other Dept",
+        "other.dept@gov.test",
+        "+1 555 010 0002",
+        "Health",
+        { member: null },
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("rejects invite creation and listing from a non-admin", async () => {
+    const member = createIdentity("invite-non-admin");
+    await signUp(member, "Mia Member");
+    actor.setIdentity(member);
+
+    await expect(
+      actor.createInvite(
+        "Nope",
+        "nope@gov.test",
+        "+1 555 010 0003",
+        "Finance",
+        { member: null },
+      ),
+    ).rejects.toThrow();
+    await expect(actor.listInvites()).rejects.toThrow();
+    await expect(actor.cancelInvite(1n)).rejects.toThrow();
+  });
+});

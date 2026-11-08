@@ -1,5 +1,7 @@
 import { Role } from "@/backend";
 import type { Profile } from "@/backend";
+import { InviteCreateForm } from "@/components/InviteCreateForm";
+import { InviteList } from "@/components/InviteList";
 import { formatTimestamp } from "@/components/MessageBubble";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,7 @@ import {
   useApproveUser,
   useApprovedUsers,
   useDenyUser,
+  useInvites,
   usePendingRequests,
   useReinstateUser,
   useRemoveDepartmentAdmin,
@@ -174,6 +177,7 @@ export function AdminPage({ profile }: AdminPageProps) {
   const pending = usePendingRequests();
   const approved = useApprovedUsers();
   const suspended = useSuspendedUsers();
+  const invites = useInvites();
   const approve = useApproveUser();
   const deny = useDenyUser();
   const suspend = useSuspendUser();
@@ -193,6 +197,7 @@ export function AdminPage({ profile }: AdminPageProps) {
   const pendingList = pending.data ?? [];
   const approvedList = approved.data ?? [];
   const suspendedList = suspended.data ?? [];
+  const inviteList = invites.data ?? [];
 
   function run(
     start: (options: {
@@ -286,6 +291,35 @@ export function AdminPage({ profile }: AdminPageProps) {
           </button>
         </div>
       )}
+
+      <SectionShell
+        ocid="admin.invite"
+        title="Create invite"
+        description={
+          isSuper
+            ? "Invite a new staff member into any department."
+            : `Invite a new staff member into ${profile.department}.`
+        }
+      >
+        <InviteCreateForm department={profile.department} isSuper={isSuper} />
+      </SectionShell>
+
+      <SectionShell
+        ocid="admin.invites"
+        title="Invites"
+        description={
+          isSuper
+            ? "Every invite across all departments, with its status."
+            : `Invites for ${profile.department}, with their status.`
+        }
+        count={invites.isSuccess ? inviteList.length : undefined}
+      >
+        <InviteList
+          invites={inviteList}
+          isLoading={invites.isLoading}
+          isError={invites.isError}
+        />
+      </SectionShell>
 
       <SectionShell
         ocid="admin.pending"

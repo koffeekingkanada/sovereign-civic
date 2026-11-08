@@ -14,12 +14,14 @@ import Types "types/messaging";
 import MessagingLib "lib/messaging";
 import MessagingApi "mixins/messaging-api";
 import AccessApi "mixins/access-api";
+import InvitesApi "mixins/invites-api";
 import ApiDocMixin "mixins/api-doc";
 
 actor {
   let accessControlState : AccessControl.AccessControlState;
   let profiles : Map.Map<Principal, Types.Profile>;
   let messages : Map.Map<Principal, [Types.Message]>;
+  let invites : Map.Map<Nat, Types.Invite>;
 
   transient let anyPrincipal = Principal.fromText("aaaaa-aa");
 
@@ -34,9 +36,23 @@ actor {
     profiles.values();
   };
 
+  func inviteRows() : Iter.Iter<Types.Invite> {
+    invites.values();
+  };
+
+  func inviteStatusText(status : Types.InviteStatus) : Text {
+    switch (status) {
+      case (#pending) { "pending" };
+      case (#used) { "used" };
+      case (#expired) { "expired" };
+      case (#cancelled) { "cancelled" };
+    };
+  };
+
   include MixinAuthorization(accessControlState, null);
   include MessagingApi(profiles, messages);
   include AccessApi(profiles);
+  include InvitesApi(profiles, invites);
   include ApiDocMixin();
   include Expose({
     entities = [
@@ -70,6 +86,35 @@ actor {
         .payload("recipient", func(m) = m.recipient)
         .payload("content", func(m) = m.content)
         .payload("timestamp", func(m) = m.timestamp)
+        .controllerOnly()
+        .build(),
+      OQL.Entity.manual<Types.Invite>("invite", inviteRows, "Invite", "id")
+        .sample({
+          id = 0;
+          fullName = "";
+          workEmail = "";
+          phone = "";
+          department = "";
+          role = #member;
+          linkToken = "";
+          code = "";
+          status = #pending;
+          createdBy = anyPrincipal;
+          createdAt = 0;
+          expiresAt = 0;
+          wrongCodeAttempts = 0;
+        })
+        .payload("id", func(i) = i.id)
+        .payload("fullName", func(i) = i.fullName)
+        .payload("workEmail", func(i) = i.workEmail)
+        .payload("phone", func(i) = i.phone)
+        .payload("department", func(i) = i.department)
+        .payload("role", func(i) = MessagingLib.roleText(i.role))
+        .payload("status", func(i) = inviteStatusText(i.status))
+        .payload("createdBy", func(i) = i.createdBy)
+        .payload("createdAt", func(i) = i.createdAt)
+        .payload("expiresAt", func(i) = i.expiresAt)
+        .payload("wrongCodeAttempts", func(i) = i.wrongCodeAttempts)
         .controllerOnly()
         .build(),
     ];

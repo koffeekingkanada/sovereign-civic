@@ -86,39 +86,25 @@ describe("App authentication gating", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the sign-up form to a first-time signed-in user", async () => {
+  it("shows only the invitation message to a first-time signed-in user", async () => {
+    // The accepted change removes the public access-request form: a signed-in
+    // caller the backend has no profile for sees only the invitation message.
     vi.mocked(actor.getMyProfile).mockResolvedValue(null);
     renderApp();
     expect(
-      await screen.findByRole("heading", { name: /request access/i }),
+      await screen.findByText(
+        "Access is by invitation. Contact your organization's administrator.",
+      ),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /request access/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit request/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /^Directory$/ }),
     ).not.toBeInTheDocument();
-  });
-
-  it("submits the four sign-up fields to registerProfile", async () => {
-    const user = userEvent.setup();
-    vi.mocked(actor.getMyProfile).mockResolvedValue(null);
-    vi.mocked(actor.registerProfile).mockResolvedValue(
-      makeProfile({ status: Status.pending }),
-    );
-    renderApp();
-
-    await user.type(await screen.findByLabelText(/full name/i), "Ada Lovelace");
-    await user.type(screen.getByLabelText(/work email/i), "ada@finance.gov");
-    await user.type(screen.getByLabelText(/department or team/i), "Finance");
-    await user.type(screen.getByLabelText(/job title/i), "Analyst");
-    await user.click(screen.getByRole("button", { name: /submit request/i }));
-
-    await waitFor(() => {
-      expect(actor.registerProfile).toHaveBeenCalledWith(
-        "Ada Lovelace",
-        "ada@finance.gov",
-        "Finance",
-        "Analyst",
-      );
-    });
   });
 });
 
@@ -205,7 +191,11 @@ describe("App access gating is preserved", () => {
 
     // The status screen is the only surface a Pending user reaches; the entry
     // overlay must not let a non-approved user through to the Directory.
-    expect(await screen.findByText(/awaiting approval/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Access is by invitation. Contact your organization's administrator.",
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /^Directory$/ }),
     ).not.toBeInTheDocument();
@@ -316,7 +306,9 @@ describe("entry video overlay after an approved sign-in", () => {
     renderApp();
 
     expect(
-      await screen.findByRole("heading", { name: /request access/i }),
+      await screen.findByText(
+        "Access is by invitation. Contact your organization's administrator.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
@@ -425,7 +417,11 @@ describe("entry video overlay after an approved sign-in", () => {
     );
     renderApp();
 
-    expect(await screen.findByText(/awaiting approval/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Access is by invitation. Contact your organization's administrator.",
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
         name: /skip the introduction video/i,

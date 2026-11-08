@@ -7,12 +7,53 @@ type AccessControlState__201339279 =
 type Data__44217153<K, V> = {var count : Nat__227979830; kvs : [var ?(K, V)]};
 type Internal__283199666<K, V> =
   {children : [var ?Node__204828119<K, V>]; data : Data__44217153<K, V>};
+type InviteStatus__350678769 = {#cancelled; #expired; #pending; #used};
+type InviteStatus__797141978 = {#cancelled; #expired; #pending; #used};
+type Invite__359823902 =
+  {
+    code : Text;
+    createdAt : Timestamp__301639476;
+    createdBy : UserId__343168941;
+    department : Text;
+    expiresAt : Timestamp__301639476;
+    fullName : Text;
+    id : Nat;
+    linkToken : Text;
+    phone : Text;
+    role : Role__319959552;
+    status : InviteStatus__350678769;
+    workEmail : Text;
+    wrongCodeAttempts : Nat
+  };
+type Invite__887032864 =
+  {
+    code : Text;
+    createdAt : Nat;
+    createdBy : Principal;
+    department : Text;
+    expiresAt : Nat;
+    fullName : Text;
+    id : Nat;
+    linkToken : Text;
+    phone : Text;
+    role : Role__892287502;
+    status : InviteStatus__797141978;
+    workEmail : Text;
+    wrongCodeAttempts : Nat
+  };
 type Leaf__598469445<K, V> = {data : Data__44217153<K, V>};
 type Map__230067015<K, V> = Map__405889023<K, V>;
 type Map__405889023<K, V> = Map__603270868<K, V>;
 type Map__603270868<K, V> =
   {var root : Node__204828119<K, V>; var size : Nat__227979830};
 type Message__1049318402 =
+  {
+    content : Text;
+    recipient : Principal;
+    sender : Principal;
+    timestamp : Nat
+  };
+type Message__262526308 =
   {
     content : Text;
     recipient : Principal;
@@ -80,6 +121,13 @@ type NewActor__346813299 =
     messages : Map__230067015<Principal, [NewMessage__11650293]>;
     profiles : Map__230067015<Principal, Profile__415376870>
   };
+type NewActor__565610082 =
+  {
+    accessControlState : AccessControlState__201339279;
+    invites : Map__230067015<Nat, Invite__887032864>;
+    messages : Map__230067015<Principal, [Message__262526308]>;
+    profiles : Map__230067015<Principal, Profile__511835798>
+  };
 type NewActor__666861742 =
   {
     accessControlState : AccessControlState__201339279;
@@ -144,6 +192,12 @@ type OldActor__293720163 =
     accessControlState : AccessControlState__201339279;
     messages : Map__230067015<Principal, [Message__494754899]>;
     profiles : Map__230067015<Principal, Profile__263381679>
+  };
+type OldActor__332594710 =
+  {
+    accessControlState : AccessControlState__201339279;
+    messages : Map__230067015<Principal, [Message__262526308]>;
+    profiles : Map__230067015<Principal, Profile__511835798>
   };
 type OldActor__414626421 =
   {
@@ -229,6 +283,18 @@ type Profile__415376870 =
     status : Status__468492581;
     workEmail : Text
   };
+type Profile__511835798 =
+  {
+    department : Text;
+    fullName : Text;
+    isDemo : Bool;
+    jobTitle : Text;
+    principal : Principal;
+    registeredAt : Nat;
+    role : Role__892287502;
+    status : Status__175869177;
+    workEmail : Text
+  };
 type Profile__632657341 =
   {
     department : Text;
@@ -259,7 +325,9 @@ type Role__319959552 = {#departmentAdmin; #member; #superAdmin};
 type Role__385987605 = {#departmentAdmin; #member; #superAdmin};
 type Role__416643811 = {#departmentAdmin; #member; #superAdmin};
 type Role__429787196 = {#departmentAdmin; #member; #superAdmin};
+type Role__892287502 = {#departmentAdmin; #member; #superAdmin};
 type Role__93347038 = {#departmentAdmin; #member; #superAdmin};
+type Status__175869177 = {#approved; #denied; #pending; #suspended};
 type Status__216529994 = {#approved; #denied; #pending; #suspended};
 type Status__297375184 = {#approved; #denied; #pending; #suspended};
 type Status__346292024 = {#approved; #denied; #pending; #suspended};
@@ -277,13 +345,19 @@ type UserRole__91647283 = {#admin; #guest; #user};
   "20261025_200000" : (old : OldActor__293720163) -> NewActor__1073511891;
   "20261025_210000" : (old : OldActor__1006435693) -> NewActor__346813299;
   "20261025_220000" : (old : OldActor__675047732) -> NewActor__266457383;
-  "20261025_230000" : (old : OldActor__414626421) -> NewActor__764466830
+  "20261025_230000" : (old : OldActor__414626421) -> NewActor__764466830;
+  "20261107_120000" : (old : OldActor__332594710) -> NewActor__565610082
 }
 actor  {
   stable accessControlState :
     {
       var adminAssigned : Bool;
       userRoles : Map__230067015<Principal, UserRole__91647283>
+    };
+  stable invites :
+    {
+      var root : Node__204828119<Nat, Invite__359823902>;
+      var size : Nat__227979830
     };
   stable messages :
     {

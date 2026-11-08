@@ -113,7 +113,7 @@ export function VaultWheel({
             <div
               key={node.label}
               className={cn(
-                "absolute flex size-[34%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border p-1.5 text-center text-[0.6rem] font-medium leading-tight sm:text-[0.7rem]",
+                "absolute flex size-[30.6%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border p-1.5 text-center text-[0.6rem] font-medium leading-tight sm:text-[0.7rem]",
                 node.roadmap
                   ? "border-dashed border-border bg-background/70 text-muted-foreground/70"
                   : "border-primary/40 bg-card text-foreground shadow-card-resting",

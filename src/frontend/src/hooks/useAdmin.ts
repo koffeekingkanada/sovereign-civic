@@ -1,5 +1,5 @@
 import { Role, Status, createActor } from "@/backend";
-import type { Profile, backendInterface } from "@/backend";
+import type { Invite, Profile, backendInterface } from "@/backend";
 import { profileKeys, useMyProfile } from "@/hooks/useProfile";
 import { useActor } from "@caffeineai/core-infrastructure";
 import type { Principal } from "@icp-sdk/core/principal";
@@ -9,6 +9,7 @@ export const adminKeys = {
   pending: ["admin", "pending"] as const,
   approved: ["admin", "approved"] as const,
   suspended: ["admin", "suspended"] as const,
+  invites: ["admin", "invites"] as const,
 };
 
 /** True when the caller is an Approved Super Admin or Department Admin. */
@@ -117,4 +118,62 @@ export function useSetDemoAccount() {
   return useAdminMutation<{ user: Principal; isDemo: boolean }>(
     (actor, { user, isDemo }) => actor.setDemoAccount(user, isDemo),
   );
+}
+
+/** Invites visible to the caller: all for a Super Admin, own department otherwise. */
+export function useInvites() {
+  const { actor, isFetching } = useActor(createActor);
+  const isAdmin = useIsAdmin();
+  return useQuery<Invite[]>({
+    queryKey: adminKeys.invites,
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.listInvites();
+    },
+    enabled: isAdmin && !!actor && !isFetching,
+  });
+}
+
+export interface InviteInput {
+  fullName: string;
+  workEmail: string;
+  phone: string;
+  department: string;
+  role: Role;
+}
+
+/** Create a single-use invite. The backend enforces department scope. */
+export function useCreateInvite() {
+  const { actor } = useActor(createActor);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: InviteInput) => {
+      if (!actor) throw new Error("Backend is not ready");
+      return actor.createInvite(
+        input.fullName,
+        input.workEmail,
+        input.phone,
+        input.department,
+        input.role,
+      );
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.invites });
+    },
+  });
+}
+
+/** Cancel a pending invite by its id. */
+export function useCancelInvite() {
+  const { actor } = useActor(createActor);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (inviteId: bigint) => {
+      if (!actor) throw new Error("Backend is not ready");
+      return actor.cancelInvite(inviteId);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.invites });
+    },
+  });
 }

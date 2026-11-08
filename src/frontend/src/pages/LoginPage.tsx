@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { InviteRedeem } from "@/components/InviteRedeem";
 import { VaultLogo } from "@/components/VaultLogo";
 import { VaultWheel } from "@/components/VaultWheel";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,26 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function LoginPage({ onOpenAbout }: { onOpenAbout?: () => void }) {
-  const { login, isLoggingIn, isLoginError, loginError } = useAuth();
+interface LoginPageProps {
+  /** Opens the public About page from the sign-in card. */
+  onOpenAbout?: () => void;
+  /**
+   * The single-use invite token carried by an invite link. When present the
+   * page frames sign-in as accepting an invitation, and once the person is
+   * signed in it hands off to the 6-digit code entry.
+   */
+  inviteToken?: string | null;
+  /** Called once an invite has been redeemed and the account approved. */
+  onInviteRedeemed?: () => void;
+}
+
+export function LoginPage({
+  onOpenAbout,
+  inviteToken,
+  onInviteRedeemed,
+}: LoginPageProps) {
+  const { login, isLoggingIn, isLoginError, loginError, isAuthenticated } =
+    useAuth();
 
   // Reduced-motion users skip the intro entirely and see the sign-in content
   // directly, with no entrance animation.
@@ -64,6 +83,42 @@ export function LoginPage({ onOpenAbout }: { onOpenAbout?: () => void }) {
       }
     };
   }, [introDone, introReady]);
+
+  // An invite link leads to Internet Identity sign-in and then to the 6-digit
+  // code entry. Once the person is signed in, the code entry replaces the
+  // sign-in card so the invitation is completed in one place.
+  if (inviteToken && isAuthenticated) {
+    return (
+      <div className="relative isolate overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 bg-primary"
+        >
+          <img
+            src={VAULT_IMAGE}
+            alt=""
+            width={1600}
+            height={893}
+            sizes="100vw"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            onLoad={() => setImageLoaded(true)}
+            className={`h-full w-full object-cover transition-opacity duration-700 ease-out ${
+              imageLoaded ? "opacity-40" : "opacity-0"
+            }`}
+          />
+          <div className="absolute inset-0 bg-primary/70" />
+        </div>
+        <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-8 md:py-12">
+          <InviteRedeem
+            linkToken={inviteToken}
+            onRedeemed={() => onInviteRedeemed?.()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative isolate overflow-hidden">
@@ -150,9 +205,9 @@ export function LoginPage({ onOpenAbout }: { onOpenAbout?: () => void }) {
             <p className="max-w-md text-lg text-white/90">{branding.tagline}</p>
             <div className="rule-gold h-0.5 w-24" aria-hidden="true" />
             <p className="max-w-md text-sm text-white/80">
-              A directory and direct messaging service for your organization's
-              staff. Access is granted through Internet Identity — the only
-              supported sign-in method.
+              {inviteToken
+                ? "You have been invited to join. Sign in with Internet Identity to continue, then enter the 6-digit code your administrator gave you."
+                : "A directory and direct messaging service for your organization's staff. Access is granted through Internet Identity — the only supported sign-in method."}
             </p>
           </div>
 
@@ -165,7 +220,7 @@ export function LoginPage({ onOpenAbout }: { onOpenAbout?: () => void }) {
               />
               <div>
                 <p className="font-display text-base font-semibold text-foreground">
-                  Sign in
+                  {inviteToken ? "Accept your invitation" : "Sign in"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Internet Identity required

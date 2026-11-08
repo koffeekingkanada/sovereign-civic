@@ -33,6 +33,17 @@
 - Tapping anywhere skips the entry video
 - Fade from white into the Directory when the video ends or is skipped
 - Go straight to the Directory when the video cannot load or reduced motion is on
+- Remove the public access-request form
+- A signed-in user without an approved account sees only "Access is by invitation. Contact your organization's administrator."
+- Admins create invites with full name, email, phone number, department and role
+- Each invite produces a single-use invite link and a separate 6-digit code shown to the admin
+- The invite link leads to Internet Identity sign-in then 6-digit code entry
+- A matching link and code create an approved account with the admin-set department and role
+- Each invite works once, expires after 7 days, and can be cancelled by an admin
+- After 5 wrong codes the invite is cancelled
+- Department Admins can only invite people into their own department
+- The Admin page lists all invites with status, who created them, and when
+- Enforce all invite rules in the backend canister, not only in the interface
 
 ## Verified Commands
 
@@ -42,20 +53,6 @@
 
 ## Learnings
 
-- Theme CSS vars in src/frontend/src/index.css hold raw OKLCH component triplets (for example --primary: 0.34 0.072 250), so SVG stroke and fill must wrap them as oklch(var(--primary)); a bare var(--primary) is an invalid color and paints nothing, which renders the vault logo and watermark as blank elements.
-- The vault-door logo is src/frontend/src/components/VaultLogo.tsx (inline SVG, oklch(var(--primary)) navy and oklch(var(--accent)) gold, optional title prop for the emblem accessible name), the decorative watermark is src/frontend/src/components/VaultWatermark.tsx (aria-hidden, pointer-events-none, z-index -1 inside the page's isolate wrapper) and the sign-in wheel is src/frontend/src/components/VaultWheel.tsx.
-- The branding config in src/frontend/src/lib/config.ts no longer carries a province identity field; the header, footer, status, sign-up and display-name surfaces render the organization name and tagline only.
-- MessageComposer.tsx classifies the device from matchMedia('(pointer: coarse)')/'(hover: none)' plus navigator.maxTouchPoints and a narrow viewport, defaulting to computer when capabilities are absent so jsdom Enter-to-send tests still pass; touch devices insert a newline on Return and send only via the Send button.
-- Local preflight cannot observe the Login intro animation or its Skip button because the intro completes before the first observation settles, and it cannot issue a Shift modifier or complete a Send activation blocked by the browser's external-communication policy.
-- The vault image is copied to src/frontend/public/assets/images/vault-door.jpg and referenced as /assets/images/vault-door.jpg; the sign-in intro animates it with CSS keyframes in index.css (door swing, wheel spin, lock shake) rather than Tailwind config.
-- VaultLogo is now a flat round SCS badge (navy disc, gold ring, gold SCS text) but keeps the title/size/aria contract and still paints oklch(var(--primary)) and oklch(var(--accent)).
-- src/frontend/src/components/VaultWatermark.tsx was deleted and the .vault-watermark rules removed from index.css; bash rm is permission-denied in this workspace, so deleting a tracked source file works via git rm from the app root.
-- LoginPage gates its intro on introDone initialized from prefersReducedMotion(); the login.intro section with .vault-closing/.vault-closing-door/.vault-closing-wheel and login.skip_button renders until finishIntro fires at INTRO_DURATION_MS=3800, and the three CSS animations end at 3.3s inside that cap.
-- Local preflight cannot emulate prefers-reduced-motion and its observation stability wait outlasts the <=4s sign-in intro, so the intro, the Skip button and the reduced-motion branch stay unverified by local testing.
-- The post-sign-in entry video overlay is src/frontend/src/components/EntryVideoOverlay.tsx, wired into src/frontend/src/App.tsx in the approved-profile branch; gating uses sessionStorage key scs.entryVideoPlayed plus prefers-reduced-motion, read once in App's useState initializer so it never replays within a session.
-- The entry video asset is src/frontend/public/assets/video/vault-entry.mp4, referenced through ENTRY_VIDEO_SRC; the overlay is a full-screen semantic <button> wrapping a controls-less muted <video> with object-cover, and onEnded/onError both call the same finish() that fades out over 600ms.
-- Local preflight cannot positively observe the entry video overlay: its absence is equally consistent with the required reduced-motion and video-load fallbacks, so the overlay, tap-to-skip, white fade and once-per-session behavior stay unverified by local testing.
-- Biome rejects role='button' on a div (useSemanticElements); a full-screen <button> wrapping a controls-less <video> is the accepted skip overlay.
 - EntryVideoOverlay.tsx now starts playback explicitly in a mount effect with a retriedRef one-shot retry, in addition to the autoPlay attribute; the finish callback is stable via useCallback([onDone]) so the effect runs once on mount.
 - Local preflight cannot positively observe the entry video overlay: after sign-in the Directory renders directly with no overlay and no observable video asset request, which is equally consistent with the required reduced-motion and video-load fallbacks, so playback, tap-to-skip, the white fade and once-per-session behavior stay unverified by local testing.
 - LoginPage's sign-in intro is gated on introDone initialized from prefersReducedMotion(); the local preflight environment reports reduced motion, so the intro, the lock-shake and the 'Unlock the vault' button never render there and the sign-in content shows directly. The intro, its settle timing and the unlock button stay unverified by local testing.
@@ -67,3 +64,17 @@
 - The capability wheel is rendered on LoginPage.tsx:228, not a separate roadmap route; the roadmap status is the faded node.roadmap circles plus the key legend.
 - VaultWheel labels were shortened to 'Independent Nodes' and 'Encryption'; the node circle size utility is now size-[34%] and the label span carries break-words so 'Documents' fits on phones.
 - VaultWheel.test.tsx and LoginPage.test.tsx assert the wheel labels and circle size; the tester owns those files and updates them when labels change.
+- The footer build label lives in src/frontend/src/components/Layout.tsx as a sibling <p> of the 'Powered by the Internet Computer' note, styled text-xs text-muted-foreground; BUILD_VERSION and BUILD_TIMESTAMP are single named constants in that file, so a future build increments the version and updates the timestamp in one place.
+- The footer environment word is computed at render time by buildEnvironment(), which tests both window.location.hostname and href for /-draft/i and falls back to 'Live' when window.location is unavailable.
+- src/frontend/src/__tests__/layout-footer.test.tsx asserts the footer build label text and stubs window.location to drive the environment word; the tester owns that file.
+- VaultWheel node circles are sized by the size-[30.6%] utility on the labelled circle div (VaultWheel.tsx:116); 34% x 0.9 = 30.6% is the exact 10% shrink, and the label text classes stay unchanged.
+- VaultWheel.test.tsx and LoginPage.test.tsx assert the wheel labels and circle size; the tester owns those files and updates them when the size utility changes.
+- The invite-only flow lives in src/backend/lib/invites.mo (createInvite, listInvites, cancelInvite, redeemInvite) with its public methods in src/backend/mixins/invites-api.mo; createInvite rejects a non-Super-Admin caller requesting role = #superAdmin, and the migration src/backend/migrations/20261107_120000.mo declares invites and nextInviteId.
+- The Invite type in src/backend/types/messaging.mo carries id, fullName, workEmail, phone, department, role, linkToken, code, status (pending/used/expired/cancelled), createdBy, createdAt, expiresAt and wrongCodeAttempts; redeemInvite returns a Result value so the frontend maps each error variant.
+- The invite link is the app address with the link token as an ?invite= query parameter; src/frontend/src/App.tsx reads it once from window.location in its useState initializer so it survives the Internet Identity sign-in round trip.
+- src/frontend/src/components/InviteCreateForm.tsx derives its role options from the isSuper prop so a Department Admin is never offered the Super Admin option; src/frontend/src/components/InviteList.tsx shows status, creator and created date with a Cancel action for pending invites.
+- src/frontend/src/components/InviteRedeem.tsx owns the 6-digit code entry and every rejection message; src/frontend/src/pages/LoginPage.tsx takes optional inviteToken and onInviteRedeemed props.
+- The public access-request form is gone: src/frontend/src/App.tsx renders src/frontend/src/components/StatusScreen.tsx for both the no-profile and non-approved branches, and StatusScreen shows only the invitation message.
+- src/frontend/src/__tests__/support.tsx makeActor must implement every backendInterface method, including cancelInvite, createInvite, listInvites and redeemInvite; the tester owns that file.
+- Local preflight cannot reach any approved-user surface in this app: both QA identities are unapproved and see only the invitation gate, so admin invite creation, invite redemption, the invite list and the existing directory and messaging surfaces stay unverified by local testing.
+- The footer build label in src/frontend/src/components/Layout.tsx is now v22; src/frontend/src/__tests__/layout-footer.test.tsx asserts that version string and the tester owns it.

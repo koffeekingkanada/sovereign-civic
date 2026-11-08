@@ -49,14 +49,6 @@ beforeEach(() => {
   actor = makeActor();
 });
 
-async function completeSignup(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(await screen.findByLabelText(/full name/i), "Ada Lovelace");
-  await user.type(screen.getByLabelText(/work email/i), "ada@finance.gov");
-  await user.type(screen.getByLabelText(/department or team/i), "Finance");
-  await user.type(screen.getByLabelText(/job title/i), "Analyst");
-  await user.click(screen.getByRole("button", { name: /submit request/i }));
-}
-
 /**
  * Renders the app with the sign-in intro's settle timeout faked, advances past
  * the lock-shake so the "Unlock the vault" action is revealed, then restores
@@ -74,7 +66,6 @@ function renderAppAndSettle() {
 
 describe("the app renders the profile the backend returns", () => {
   it("lands an approved registrant on the directory with the Admin console", async () => {
-    const user = userEvent.setup();
     // The first registrant: the backend returns an Approved Super Admin.
     const approvedSuper = makeProfile({
       principal: ME,
@@ -84,20 +75,15 @@ describe("the app renders the profile the backend returns", () => {
       department: "",
       workEmail: "",
     });
-    vi.mocked(actor.getMyProfile)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValue(approvedSuper);
-    vi.mocked(actor.registerProfile).mockResolvedValue(approvedSuper);
+    vi.mocked(actor.getMyProfile).mockResolvedValue(approvedSuper);
     vi.mocked(actor.listDirectory).mockResolvedValue([
       makeEntry(ME, "Ada Lovelace"),
       makeEntry(OTHER, "Grace Hopper"),
     ]);
     renderApp();
 
-    await completeSignup(user);
-
-    // The returned Approved profile drives the next screen: the directory, not
-    // the awaiting-approval screen.
+    // The returned Approved profile drives the screen: the directory, not the
+    // invitation-only status screen.
     expect(
       await screen.findByRole("heading", { name: /^Directory$/ }),
     ).toBeInTheDocument();
@@ -107,20 +93,14 @@ describe("the app renders the profile the backend returns", () => {
     expect(screen.getByRole("button", { name: /^Admin$/ })).toBeInTheDocument();
   });
 
-  it("keeps a Pending registrant on the awaiting-approval screen", async () => {
-    const user = userEvent.setup();
+  it("keeps a Pending registrant on the invitation-only status screen", async () => {
     const pending = makeProfile({
       principal: ME,
       fullName: "Ada Lovelace",
       status: Status.pending,
     });
-    vi.mocked(actor.getMyProfile)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValue(pending);
-    vi.mocked(actor.registerProfile).mockResolvedValue(pending);
+    vi.mocked(actor.getMyProfile).mockResolvedValue(pending);
     renderApp();
-
-    await completeSignup(user);
 
     expect(await screen.findByText(AWAITING_MESSAGE)).toBeInTheDocument();
     expect(

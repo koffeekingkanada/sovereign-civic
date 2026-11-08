@@ -3,13 +3,13 @@ import { VaultLogo } from "@/components/VaultLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRegisterProfile } from "@/hooks/useProfile";
+import { useUpdateProfile } from "@/hooks/useProfile";
 import { branding } from "@/lib/config";
 import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 interface SignupFormProps {
-  profile?: Profile | null;
+  profile: Profile;
   onDone?: () => void;
   onCancel?: () => void;
 }
@@ -67,12 +67,17 @@ function validate(key: FieldKey, raw: string): string | null {
   return null;
 }
 
+/**
+ * The signed-in user's own details form. Access is invitation-only, so this is
+ * only ever used to update an existing profile — there is no public sign-up
+ * path.
+ */
 export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
   const [values, setValues] = useState<Record<FieldKey, string>>({
-    fullName: profile?.fullName ?? "",
-    workEmail: profile?.workEmail ?? "",
-    department: profile?.department ?? "",
-    jobTitle: profile?.jobTitle ?? "",
+    fullName: profile.fullName,
+    workEmail: profile.workEmail,
+    department: profile.department,
+    jobTitle: profile.jobTitle,
   });
   const [touched, setTouched] = useState<Record<FieldKey, boolean>>({
     fullName: false,
@@ -81,8 +86,7 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
     jobTitle: false,
   });
   const [submitted, setSubmitted] = useState(false);
-  const register = useRegisterProfile();
-  const isEditing = !!profile;
+  const update = useUpdateProfile();
 
   const errors: Record<FieldKey, string | null> = {
     fullName: validate("fullName", values.fullName),
@@ -94,7 +98,7 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (register.isPending) return;
+    if (update.isPending) return;
     setSubmitted(true);
     if (!valid) {
       setTouched({
@@ -105,7 +109,7 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
       });
       return;
     }
-    register.mutate(
+    update.mutate(
       {
         fullName: values.fullName.trim(),
         workEmail: values.workEmail.trim(),
@@ -133,14 +137,12 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
               {branding.organizationName}
             </p>
             <h1 className="font-display text-xl font-semibold tracking-tight text-foreground">
-              {isEditing ? "Update your details" : "Request access"}
+              Update your details
             </h1>
           </div>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          {isEditing
-            ? "Keep your details current so your access request can be reviewed."
-            : "Provide your work details. The first person to register becomes the administrator and approves everyone who follows; after that, an administrator reviews each request before you can use the directory."}
+          Keep your details current so colleagues can find you in the directory.
         </p>
         <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
           {FIELDS.map((field) => {
@@ -182,7 +184,7 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
               </div>
             );
           })}
-          {register.isError ? (
+          {update.isError ? (
             <p
               data-ocid="signup.error_state"
               role="alert"
@@ -191,28 +193,22 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
               We could not save your details. Please try again.
             </p>
           ) : null}
-          {register.isSuccess ? (
+          {update.isSuccess ? (
             <output
               data-ocid="signup.success_state"
               className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground"
             >
               <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {isEditing
-                ? "Your details have been saved."
-                : "Your access request has been submitted."}
+              Your details have been saved.
             </output>
           ) : null}
           <Button
             type="submit"
             data-ocid="signup.submit_button"
-            disabled={register.isPending}
+            disabled={update.isPending}
             className="w-full rounded-md"
           >
-            {register.isPending
-              ? "Saving…"
-              : isEditing
-                ? "Save details"
-                : "Submit request"}
+            {update.isPending ? "Saving…" : "Save details"}
           </Button>
           {onCancel ? (
             <Button
@@ -220,7 +216,7 @@ export function SignupForm({ profile, onDone, onCancel }: SignupFormProps) {
               variant="ghost"
               data-ocid="signup.cancel_button"
               onClick={onCancel}
-              disabled={register.isPending}
+              disabled={update.isPending}
               className="w-full rounded-md"
             >
               Cancel

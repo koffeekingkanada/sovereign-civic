@@ -29,7 +29,7 @@ export const Error = IDL.Variant({
     'expected' : IDL.Vec(IDL.Text),
   }),
 });
-export const Result__1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
+export const Result_1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
 export const Status = IDL.Variant({
   'pending' : IDL.Null,
   'denied' : IDL.Null,
@@ -59,6 +59,27 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const InviteStatus = IDL.Variant({
+  'cancelled' : IDL.Null,
+  'expired' : IDL.Null,
+  'pending' : IDL.Null,
+  'used' : IDL.Null,
+});
+export const Invite = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : InviteStatus,
+  'expiresAt' : Timestamp,
+  'workEmail' : IDL.Text,
+  'code' : IDL.Text,
+  'createdAt' : Timestamp,
+  'createdBy' : UserId,
+  'role' : Role,
+  'fullName' : IDL.Text,
+  'wrongCodeAttempts' : IDL.Nat,
+  'linkToken' : IDL.Text,
+  'phone' : IDL.Text,
+  'department' : IDL.Text,
+});
 export const Value = IDL.Variant({
   'int' : IDL.Int,
   'nat' : IDL.Nat,
@@ -68,7 +89,7 @@ export const Value = IDL.Variant({
   'text' : IDL.Text,
 });
 export const Cell = IDL.Record({ 'value' : Value, 'name' : IDL.Text });
-export const Result = IDL.Record({
+export const Result__1 = IDL.Record({
   'hasMore' : IDL.Bool,
   'rows' : IDL.Vec(IDL.Vec(Cell)),
 });
@@ -83,16 +104,31 @@ export const Message = IDL.Record({
   'sender' : UserId,
   'timestamp' : Timestamp,
 });
+export const RedeemError = IDL.Variant({
+  'wrongCode' : IDL.Record({ 'remaining' : IDL.Nat }),
+  'cancelled' : IDL.Null,
+  'expired' : IDL.Null,
+  'tooManyAttempts' : IDL.Null,
+  'used' : IDL.Null,
+  'notFound' : IDL.Null,
+});
+export const Result = IDL.Variant({ 'ok' : Profile, 'err' : RedeemError });
 
 export const idlService = IDL.Service({
   '_initialize_access_control' : IDL.Func([], [], []),
-  '_internet_identity_sign_in_finish' : IDL.Func([], [Result__1], []),
+  '_internet_identity_sign_in_finish' : IDL.Func([], [Result_1], []),
   '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
   'appointDepartmentAdmin' : IDL.Func([IDL.Principal], [Profile], []),
   'approveUser' : IDL.Func([IDL.Principal], [Profile], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'cancelInvite' : IDL.Func([IDL.Nat], [Invite], []),
+  'createInvite' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, Role],
+      [Invite],
+      [],
+    ),
   'denyUser' : IDL.Func([IDL.Principal], [Profile], []),
-  'execute' : IDL.Func([IDL.Text], [Result], ['query']),
+  'execute' : IDL.Func([IDL.Text], [Result__1], ['query']),
   'getApiDoc' : IDL.Func([], [IDL.Text], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getDirectoryEntry' : IDL.Func(
@@ -105,8 +141,10 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'listApprovedUsers' : IDL.Func([], [IDL.Vec(Profile)], ['query']),
   'listDirectory' : IDL.Func([], [IDL.Vec(DirectoryEntry)], ['query']),
+  'listInvites' : IDL.Func([], [IDL.Vec(Invite)], ['query']),
   'listPendingRequests' : IDL.Func([], [IDL.Vec(Profile)], ['query']),
   'listSuspendedUsers' : IDL.Func([], [IDL.Vec(Profile)], ['query']),
+  'redeemInvite' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
   'registerProfile' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
       [Profile],
@@ -144,7 +182,7 @@ export const idlFactory = ({ IDL }) => {
       'expected' : IDL.Vec(IDL.Text),
     }),
   });
-  const Result__1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
+  const Result_1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
   const Status = IDL.Variant({
     'pending' : IDL.Null,
     'denied' : IDL.Null,
@@ -174,6 +212,27 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const InviteStatus = IDL.Variant({
+    'cancelled' : IDL.Null,
+    'expired' : IDL.Null,
+    'pending' : IDL.Null,
+    'used' : IDL.Null,
+  });
+  const Invite = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : InviteStatus,
+    'expiresAt' : Timestamp,
+    'workEmail' : IDL.Text,
+    'code' : IDL.Text,
+    'createdAt' : Timestamp,
+    'createdBy' : UserId,
+    'role' : Role,
+    'fullName' : IDL.Text,
+    'wrongCodeAttempts' : IDL.Nat,
+    'linkToken' : IDL.Text,
+    'phone' : IDL.Text,
+    'department' : IDL.Text,
+  });
   const Value = IDL.Variant({
     'int' : IDL.Int,
     'nat' : IDL.Nat,
@@ -183,7 +242,7 @@ export const idlFactory = ({ IDL }) => {
     'text' : IDL.Text,
   });
   const Cell = IDL.Record({ 'value' : Value, 'name' : IDL.Text });
-  const Result = IDL.Record({
+  const Result__1 = IDL.Record({
     'hasMore' : IDL.Bool,
     'rows' : IDL.Vec(IDL.Vec(Cell)),
   });
@@ -198,16 +257,31 @@ export const idlFactory = ({ IDL }) => {
     'sender' : UserId,
     'timestamp' : Timestamp,
   });
+  const RedeemError = IDL.Variant({
+    'wrongCode' : IDL.Record({ 'remaining' : IDL.Nat }),
+    'cancelled' : IDL.Null,
+    'expired' : IDL.Null,
+    'tooManyAttempts' : IDL.Null,
+    'used' : IDL.Null,
+    'notFound' : IDL.Null,
+  });
+  const Result = IDL.Variant({ 'ok' : Profile, 'err' : RedeemError });
   
   return IDL.Service({
     '_initialize_access_control' : IDL.Func([], [], []),
-    '_internet_identity_sign_in_finish' : IDL.Func([], [Result__1], []),
+    '_internet_identity_sign_in_finish' : IDL.Func([], [Result_1], []),
     '_internet_identity_sign_in_start' : IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
     'appointDepartmentAdmin' : IDL.Func([IDL.Principal], [Profile], []),
     'approveUser' : IDL.Func([IDL.Principal], [Profile], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'cancelInvite' : IDL.Func([IDL.Nat], [Invite], []),
+    'createInvite' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, Role],
+        [Invite],
+        [],
+      ),
     'denyUser' : IDL.Func([IDL.Principal], [Profile], []),
-    'execute' : IDL.Func([IDL.Text], [Result], ['query']),
+    'execute' : IDL.Func([IDL.Text], [Result__1], ['query']),
     'getApiDoc' : IDL.Func([], [IDL.Text], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getDirectoryEntry' : IDL.Func(
@@ -220,8 +294,10 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'listApprovedUsers' : IDL.Func([], [IDL.Vec(Profile)], ['query']),
     'listDirectory' : IDL.Func([], [IDL.Vec(DirectoryEntry)], ['query']),
+    'listInvites' : IDL.Func([], [IDL.Vec(Invite)], ['query']),
     'listPendingRequests' : IDL.Func([], [IDL.Vec(Profile)], ['query']),
     'listSuspendedUsers' : IDL.Func([], [IDL.Vec(Profile)], ['query']),
+    'redeemInvite' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'registerProfile' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
         [Profile],

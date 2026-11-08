@@ -32923,7 +32923,7 @@ var import_client = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exp
 	checkDCE();
 	module.exports = require_react_dom_client_production();
 })))(), 1);
-var Result__1 = Variant({
+var Result_1 = Variant({
 	"ok": Null,
 	"err": Variant({
 		"FrontendOriginsNotConfigured": Null,
@@ -32976,7 +32976,27 @@ var UserRole = Variant({
 	"user": Null,
 	"guest": Null
 });
-var Result = Record({
+var Invite = Record({
+	"id": Nat,
+	"status": Variant({
+		"cancelled": Null,
+		"expired": Null,
+		"pending": Null,
+		"used": Null
+	}),
+	"expiresAt": Timestamp,
+	"workEmail": Text,
+	"code": Text,
+	"createdAt": Timestamp,
+	"createdBy": UserId,
+	"role": Role$1,
+	"fullName": Text,
+	"wrongCodeAttempts": Nat,
+	"linkToken": Text,
+	"phone": Text,
+	"department": Text
+});
+var Result__1 = Record({
 	"hasMore": Bool,
 	"rows": Vec(Vec(Record({
 		"value": Variant({
@@ -33001,15 +33021,34 @@ var Message = Record({
 	"sender": UserId,
 	"timestamp": Timestamp
 });
+var Result = Variant({
+	"ok": Profile,
+	"err": Variant({
+		"wrongCode": Record({ "remaining": Nat }),
+		"cancelled": Null,
+		"expired": Null,
+		"tooManyAttempts": Null,
+		"used": Null,
+		"notFound": Null
+	})
+});
 Service({
 	"_initialize_access_control": Func([], [], []),
-	"_internet_identity_sign_in_finish": Func([], [Result__1], []),
+	"_internet_identity_sign_in_finish": Func([], [Result_1], []),
 	"_internet_identity_sign_in_start": Func([], [Vec(Nat8)], []),
 	"appointDepartmentAdmin": Func([Principal], [Profile], []),
 	"approveUser": Func([Principal], [Profile], []),
 	"assignCallerUserRole": Func([Principal, UserRole], [], []),
+	"cancelInvite": Func([Nat], [Invite], []),
+	"createInvite": Func([
+		Text,
+		Text,
+		Text,
+		Text,
+		Role$1
+	], [Invite], []),
 	"denyUser": Func([Principal], [Profile], []),
-	"execute": Func([Text], [Result], ["query"]),
+	"execute": Func([Text], [Result__1], ["query"]),
 	"getApiDoc": Func([], [Text], ["query"]),
 	"getCallerUserRole": Func([], [UserRole], ["query"]),
 	"getDirectoryEntry": Func([Principal], [Opt(DirectoryEntry)], ["query"]),
@@ -33018,8 +33057,10 @@ Service({
 	"isCallerAdmin": Func([], [Bool], ["query"]),
 	"listApprovedUsers": Func([], [Vec(Profile)], ["query"]),
 	"listDirectory": Func([], [Vec(DirectoryEntry)], ["query"]),
+	"listInvites": Func([], [Vec(Invite)], ["query"]),
 	"listPendingRequests": Func([], [Vec(Profile)], ["query"]),
 	"listSuspendedUsers": Func([], [Vec(Profile)], ["query"]),
+	"redeemInvite": Func([Text, Text], [Result], []),
 	"registerProfile": Func([
 		Text,
 		Text,
@@ -33055,7 +33096,7 @@ var idlFactory = ({ IDL }) => {
 			"expected": IDL.Vec(IDL.Text)
 		})
 	});
-	const Result__1 = IDL.Variant({
+	const Result_1 = IDL.Variant({
 		"ok": IDL.Null,
 		"err": Error
 	});
@@ -33088,6 +33129,27 @@ var idlFactory = ({ IDL }) => {
 		"user": IDL.Null,
 		"guest": IDL.Null
 	});
+	const InviteStatus = IDL.Variant({
+		"cancelled": IDL.Null,
+		"expired": IDL.Null,
+		"pending": IDL.Null,
+		"used": IDL.Null
+	});
+	const Invite = IDL.Record({
+		"id": IDL.Nat,
+		"status": InviteStatus,
+		"expiresAt": Timestamp,
+		"workEmail": IDL.Text,
+		"code": IDL.Text,
+		"createdAt": Timestamp,
+		"createdBy": UserId,
+		"role": Role,
+		"fullName": IDL.Text,
+		"wrongCodeAttempts": IDL.Nat,
+		"linkToken": IDL.Text,
+		"phone": IDL.Text,
+		"department": IDL.Text
+	});
 	const Value = IDL.Variant({
 		"int": IDL.Int,
 		"nat": IDL.Nat,
@@ -33100,7 +33162,7 @@ var idlFactory = ({ IDL }) => {
 		"value": Value,
 		"name": IDL.Text
 	});
-	const Result = IDL.Record({
+	const Result__1 = IDL.Record({
 		"hasMore": IDL.Bool,
 		"rows": IDL.Vec(IDL.Vec(Cell))
 	});
@@ -33115,15 +33177,35 @@ var idlFactory = ({ IDL }) => {
 		"sender": UserId,
 		"timestamp": Timestamp
 	});
+	const RedeemError = IDL.Variant({
+		"wrongCode": IDL.Record({ "remaining": IDL.Nat }),
+		"cancelled": IDL.Null,
+		"expired": IDL.Null,
+		"tooManyAttempts": IDL.Null,
+		"used": IDL.Null,
+		"notFound": IDL.Null
+	});
+	const Result = IDL.Variant({
+		"ok": Profile,
+		"err": RedeemError
+	});
 	return IDL.Service({
 		"_initialize_access_control": IDL.Func([], [], []),
-		"_internet_identity_sign_in_finish": IDL.Func([], [Result__1], []),
+		"_internet_identity_sign_in_finish": IDL.Func([], [Result_1], []),
 		"_internet_identity_sign_in_start": IDL.Func([], [IDL.Vec(IDL.Nat8)], []),
 		"appointDepartmentAdmin": IDL.Func([IDL.Principal], [Profile], []),
 		"approveUser": IDL.Func([IDL.Principal], [Profile], []),
 		"assignCallerUserRole": IDL.Func([IDL.Principal, UserRole], [], []),
+		"cancelInvite": IDL.Func([IDL.Nat], [Invite], []),
+		"createInvite": IDL.Func([
+			IDL.Text,
+			IDL.Text,
+			IDL.Text,
+			IDL.Text,
+			Role
+		], [Invite], []),
 		"denyUser": IDL.Func([IDL.Principal], [Profile], []),
-		"execute": IDL.Func([IDL.Text], [Result], ["query"]),
+		"execute": IDL.Func([IDL.Text], [Result__1], ["query"]),
 		"getApiDoc": IDL.Func([], [IDL.Text], ["query"]),
 		"getCallerUserRole": IDL.Func([], [UserRole], ["query"]),
 		"getDirectoryEntry": IDL.Func([IDL.Principal], [IDL.Opt(DirectoryEntry)], ["query"]),
@@ -33132,8 +33214,10 @@ var idlFactory = ({ IDL }) => {
 		"isCallerAdmin": IDL.Func([], [IDL.Bool], ["query"]),
 		"listApprovedUsers": IDL.Func([], [IDL.Vec(Profile)], ["query"]),
 		"listDirectory": IDL.Func([], [IDL.Vec(DirectoryEntry)], ["query"]),
+		"listInvites": IDL.Func([], [IDL.Vec(Invite)], ["query"]),
 		"listPendingRequests": IDL.Func([], [IDL.Vec(Profile)], ["query"]),
 		"listSuspendedUsers": IDL.Func([], [IDL.Vec(Profile)], ["query"]),
+		"redeemInvite": IDL.Func([IDL.Text, IDL.Text], [Result], []),
 		"registerProfile": IDL.Func([
 			IDL.Text,
 			IDL.Text,
@@ -33149,6 +33233,13 @@ var idlFactory = ({ IDL }) => {
 	});
 };
 // src/backend.ts
+var InviteStatus = /* @__PURE__ */ function(InviteStatus) {
+	InviteStatus["cancelled"] = "cancelled";
+	InviteStatus["expired"] = "expired";
+	InviteStatus["pending"] = "pending";
+	InviteStatus["used"] = "used";
+	return InviteStatus;
+}({});
 var Role = /* @__PURE__ */ function(Role) {
 	Role["member"] = "member";
 	Role["departmentAdmin"] = "departmentAdmin";
@@ -33185,14 +33276,14 @@ var Backend = class {
 	async _internet_identity_sign_in_finish() {
 		if (this.processError) try {
 			const result = await this.actor._internet_identity_sign_in_finish();
-			return from_candid_Result__1_n1(this._uploadFile, this._downloadFile, result);
+			return from_candid_Result_1_n1(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor._internet_identity_sign_in_finish();
-			return from_candid_Result__1_n1(this._uploadFile, this._downloadFile, result);
+			return from_candid_Result_1_n1(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async _internet_identity_sign_in_start() {
@@ -33239,6 +33330,32 @@ var Backend = class {
 		}
 		else return await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n9(this._uploadFile, this._downloadFile, arg1));
 	}
+	async cancelInvite(arg0) {
+		if (this.processError) try {
+			const result = await this.actor.cancelInvite(arg0);
+			return from_candid_Invite_n10(this._uploadFile, this._downloadFile, result);
+		} catch (e) {
+			this.processError(e);
+			throw new Error("unreachable");
+		}
+		else {
+			const result = await this.actor.cancelInvite(arg0);
+			return from_candid_Invite_n10(this._uploadFile, this._downloadFile, result);
+		}
+	}
+	async createInvite(arg0, arg1, arg2, arg3, arg4) {
+		if (this.processError) try {
+			const result = await this.actor.createInvite(arg0, arg1, arg2, arg3, to_candid_Role_n13(this._uploadFile, this._downloadFile, arg4));
+			return from_candid_Invite_n10(this._uploadFile, this._downloadFile, result);
+		} catch (e) {
+			this.processError(e);
+			throw new Error("unreachable");
+		}
+		else {
+			const result = await this.actor.createInvite(arg0, arg1, arg2, arg3, to_candid_Role_n13(this._uploadFile, this._downloadFile, arg4));
+			return from_candid_Invite_n10(this._uploadFile, this._downloadFile, result);
+		}
+	}
 	async denyUser(arg0) {
 		if (this.processError) try {
 			const result = await this.actor.denyUser(arg0);
@@ -33255,14 +33372,14 @@ var Backend = class {
 	async execute(arg0) {
 		if (this.processError) try {
 			const result = await this.actor.execute(arg0);
-			return from_candid_Result_n10(this._uploadFile, this._downloadFile, result);
+			return from_candid_Result__1_n14(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.execute(arg0);
-			return from_candid_Result_n10(this._uploadFile, this._downloadFile, result);
+			return from_candid_Result__1_n14(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async getApiDoc() {
@@ -33277,40 +33394,40 @@ var Backend = class {
 	async getCallerUserRole() {
 		if (this.processError) try {
 			const result = await this.actor.getCallerUserRole();
-			return from_candid_UserRole_n18(this._uploadFile, this._downloadFile, result);
+			return from_candid_UserRole_n22(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.getCallerUserRole();
-			return from_candid_UserRole_n18(this._uploadFile, this._downloadFile, result);
+			return from_candid_UserRole_n22(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async getDirectoryEntry(arg0) {
 		if (this.processError) try {
 			const result = await this.actor.getDirectoryEntry(arg0);
-			return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+			return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.getDirectoryEntry(arg0);
-			return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+			return from_candid_opt_n23(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async getMyProfile() {
 		if (this.processError) try {
 			const result = await this.actor.getMyProfile();
-			return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+			return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.getMyProfile();
-			return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+			return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async getThread(arg0) {
@@ -33334,14 +33451,14 @@ var Backend = class {
 	async listApprovedUsers() {
 		if (this.processError) try {
 			const result = await this.actor.listApprovedUsers();
-			return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+			return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.listApprovedUsers();
-			return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+			return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async listDirectory() {
@@ -33353,30 +33470,56 @@ var Backend = class {
 		}
 		else return await this.actor.listDirectory();
 	}
+	async listInvites() {
+		if (this.processError) try {
+			const result = await this.actor.listInvites();
+			return from_candid_vec_n26(this._uploadFile, this._downloadFile, result);
+		} catch (e) {
+			this.processError(e);
+			throw new Error("unreachable");
+		}
+		else {
+			const result = await this.actor.listInvites();
+			return from_candid_vec_n26(this._uploadFile, this._downloadFile, result);
+		}
+	}
 	async listPendingRequests() {
 		if (this.processError) try {
 			const result = await this.actor.listPendingRequests();
-			return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+			return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.listPendingRequests();
-			return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+			return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async listSuspendedUsers() {
 		if (this.processError) try {
 			const result = await this.actor.listSuspendedUsers();
-			return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+			return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
 		} catch (e) {
 			this.processError(e);
 			throw new Error("unreachable");
 		}
 		else {
 			const result = await this.actor.listSuspendedUsers();
-			return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+			return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
+		}
+	}
+	async redeemInvite(arg0, arg1) {
+		if (this.processError) try {
+			const result = await this.actor.redeemInvite(arg0, arg1);
+			return from_candid_Result_n27(this._uploadFile, this._downloadFile, result);
+		} catch (e) {
+			this.processError(e);
+			throw new Error("unreachable");
+		}
+		else {
+			const result = await this.actor.redeemInvite(arg0, arg1);
+			return from_candid_Result_n27(this._uploadFile, this._downloadFile, result);
 		}
 	}
 	async registerProfile(arg0, arg1, arg2, arg3) {
@@ -33463,20 +33606,32 @@ var Backend = class {
 		}
 	}
 };
-function from_candid_Cell_n14(_uploadFile, _downloadFile, value) {
-	return from_candid_record_n15(_uploadFile, _downloadFile, value);
+function from_candid_Cell_n18(_uploadFile, _downloadFile, value) {
+	return from_candid_record_n19(_uploadFile, _downloadFile, value);
 }
 function from_candid_Error_n3(_uploadFile, _downloadFile, value) {
 	return from_candid_variant_n4(_uploadFile, _downloadFile, value);
 }
+function from_candid_InviteStatus_n12(_uploadFile, _downloadFile, value) {
+	return "cancelled" in value ? "cancelled" : "expired" in value ? "expired" : "pending" in value ? "pending" : "used" in value ? "used" : value;
+}
+function from_candid_Invite_n10(_uploadFile, _downloadFile, value) {
+	return from_candid_record_n11(_uploadFile, _downloadFile, value);
+}
 function from_candid_Profile_n5(_uploadFile, _downloadFile, value) {
 	return from_candid_record_n6(_uploadFile, _downloadFile, value);
 }
-function from_candid_Result__1_n1(_uploadFile, _downloadFile, value) {
+function from_candid_RedeemError_n29(_uploadFile, _downloadFile, value) {
+	return from_candid_variant_n30(_uploadFile, _downloadFile, value);
+}
+function from_candid_Result_1_n1(_uploadFile, _downloadFile, value) {
 	return from_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function from_candid_Result_n10(_uploadFile, _downloadFile, value) {
-	return from_candid_record_n11(_uploadFile, _downloadFile, value);
+function from_candid_Result__1_n14(_uploadFile, _downloadFile, value) {
+	return from_candid_record_n15(_uploadFile, _downloadFile, value);
+}
+function from_candid_Result_n27(_uploadFile, _downloadFile, value) {
+	return from_candid_variant_n28(_uploadFile, _downloadFile, value);
 }
 function from_candid_Role_n8(_uploadFile, _downloadFile, value) {
 	return "member" in value ? "member" : "departmentAdmin" in value ? "departmentAdmin" : "superAdmin" in value ? "superAdmin" : value;
@@ -33484,27 +33639,44 @@ function from_candid_Role_n8(_uploadFile, _downloadFile, value) {
 function from_candid_Status_n7(_uploadFile, _downloadFile, value) {
 	return "pending" in value ? "pending" : "denied" in value ? "denied" : "approved" in value ? "approved" : "suspended" in value ? "suspended" : value;
 }
-function from_candid_UserRole_n18(_uploadFile, _downloadFile, value) {
+function from_candid_UserRole_n22(_uploadFile, _downloadFile, value) {
 	return "admin" in value ? "admin" : "user" in value ? "user" : "guest" in value ? "guest" : value;
 }
-function from_candid_Value_n16(_uploadFile, _downloadFile, value) {
-	return from_candid_variant_n17(_uploadFile, _downloadFile, value);
+function from_candid_Value_n20(_uploadFile, _downloadFile, value) {
+	return from_candid_variant_n21(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n19(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n23(_uploadFile, _downloadFile, value) {
 	return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n20(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n24(_uploadFile, _downloadFile, value) {
 	return value.length === 0 ? null : from_candid_Profile_n5(_uploadFile, _downloadFile, value[0]);
 }
 function from_candid_record_n11(_uploadFile, _downloadFile, value) {
 	return {
-		hasMore: value.hasMore,
-		rows: from_candid_vec_n12(_uploadFile, _downloadFile, value.rows)
+		id: value.id,
+		status: from_candid_InviteStatus_n12(_uploadFile, _downloadFile, value.status),
+		expiresAt: value.expiresAt,
+		workEmail: value.workEmail,
+		code: value.code,
+		createdAt: value.createdAt,
+		createdBy: value.createdBy,
+		role: from_candid_Role_n8(_uploadFile, _downloadFile, value.role),
+		fullName: value.fullName,
+		wrongCodeAttempts: value.wrongCodeAttempts,
+		linkToken: value.linkToken,
+		phone: value.phone,
+		department: value.department
 	};
 }
 function from_candid_record_n15(_uploadFile, _downloadFile, value) {
 	return {
-		value: from_candid_Value_n16(_uploadFile, _downloadFile, value.value),
+		hasMore: value.hasMore,
+		rows: from_candid_vec_n16(_uploadFile, _downloadFile, value.rows)
+	};
+}
+function from_candid_record_n19(_uploadFile, _downloadFile, value) {
+	return {
+		value: from_candid_Value_n20(_uploadFile, _downloadFile, value.value),
 		name: value.name
 	};
 }
@@ -33521,7 +33693,16 @@ function from_candid_record_n6(_uploadFile, _downloadFile, value) {
 		registeredAt: value.registeredAt
 	};
 }
-function from_candid_variant_n17(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n2(_uploadFile, _downloadFile, value) {
+	return "ok" in value ? {
+		__kind__: "ok",
+		ok: value.ok
+	} : "err" in value ? {
+		__kind__: "err",
+		err: from_candid_Error_n3(_uploadFile, _downloadFile, value.err)
+	} : value;
+}
+function from_candid_variant_n21(_uploadFile, _downloadFile, value) {
 	return "int" in value ? {
 		__kind__: "int",
 		int: value.int
@@ -33542,13 +33723,34 @@ function from_candid_variant_n17(_uploadFile, _downloadFile, value) {
 		text: value.text
 	} : value;
 }
-function from_candid_variant_n2(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n28(_uploadFile, _downloadFile, value) {
 	return "ok" in value ? {
 		__kind__: "ok",
-		ok: value.ok
+		ok: from_candid_Profile_n5(_uploadFile, _downloadFile, value.ok)
 	} : "err" in value ? {
 		__kind__: "err",
-		err: from_candid_Error_n3(_uploadFile, _downloadFile, value.err)
+		err: from_candid_RedeemError_n29(_uploadFile, _downloadFile, value.err)
+	} : value;
+}
+function from_candid_variant_n30(_uploadFile, _downloadFile, value) {
+	return "wrongCode" in value ? {
+		__kind__: "wrongCode",
+		wrongCode: value.wrongCode
+	} : "cancelled" in value ? {
+		__kind__: "cancelled",
+		cancelled: value.cancelled
+	} : "expired" in value ? {
+		__kind__: "expired",
+		expired: value.expired
+	} : "tooManyAttempts" in value ? {
+		__kind__: "tooManyAttempts",
+		tooManyAttempts: value.tooManyAttempts
+	} : "used" in value ? {
+		__kind__: "used",
+		used: value.used
+	} : "notFound" in value ? {
+		__kind__: "notFound",
+		notFound: value.notFound
 	} : value;
 }
 function from_candid_variant_n4(_uploadFile, _downloadFile, value) {
@@ -33584,14 +33786,20 @@ function from_candid_variant_n4(_uploadFile, _downloadFile, value) {
 		FrontendOriginMismatch: value.FrontendOriginMismatch
 	} : value;
 }
-function from_candid_vec_n12(_uploadFile, _downloadFile, value) {
-	return value.map((x) => from_candid_vec_n13(_uploadFile, _downloadFile, x));
+function from_candid_vec_n16(_uploadFile, _downloadFile, value) {
+	return value.map((x) => from_candid_vec_n17(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n13(_uploadFile, _downloadFile, value) {
-	return value.map((x) => from_candid_Cell_n14(_uploadFile, _downloadFile, x));
+function from_candid_vec_n17(_uploadFile, _downloadFile, value) {
+	return value.map((x) => from_candid_Cell_n18(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n21(_uploadFile, _downloadFile, value) {
+function from_candid_vec_n25(_uploadFile, _downloadFile, value) {
 	return value.map((x) => from_candid_Profile_n5(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n26(_uploadFile, _downloadFile, value) {
+	return value.map((x) => from_candid_Invite_n10(_uploadFile, _downloadFile, x));
+}
+function to_candid_Role_n13(_uploadFile, _downloadFile, value) {
+	return value == "member" ? { member: null } : value == "departmentAdmin" ? { departmentAdmin: null } : value == "superAdmin" ? { superAdmin: null } : value;
 }
 function to_candid_UserRole_n9(_uploadFile, _downloadFile, value) {
 	return value == "admin" ? { admin: null } : value == "user" ? { user: null } : value == "guest" ? { guest: null } : value;
@@ -36412,6 +36620,16 @@ var ArrowLeft = createLucideIcon("arrow-left", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Check = createLucideIcon("check", [["path", {
+	d: "M20 6 9 17l-5-5",
+	key: "1gmf2c"
+}]]);
+/**
+* @license lucide-react v0.511.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var CircleCheck = createLucideIcon("circle-check", [["circle", {
 	cx: "12",
 	cy: "12",
@@ -36427,15 +36645,57 @@ var CircleCheck = createLucideIcon("circle-check", [["circle", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var Clock = createLucideIcon("clock", [["circle", {
-	cx: "12",
-	cy: "12",
-	r: "10",
-	key: "1mglay"
-}], ["polyline", {
-	points: "12 6 12 12 16 14",
-	key: "68esgv"
+var Copy = createLucideIcon("copy", [["rect", {
+	width: "14",
+	height: "14",
+	x: "8",
+	y: "8",
+	rx: "2",
+	ry: "2",
+	key: "17jyea"
+}], ["path", {
+	d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
+	key: "zix9uf"
 }]]);
+/**
+* @license lucide-react v0.511.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var KeyRound = createLucideIcon("key-round", [["path", {
+	d: "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
+	key: "1s6t7t"
+}], ["circle", {
+	cx: "16.5",
+	cy: "7.5",
+	r: ".5",
+	fill: "currentColor",
+	key: "w0ekpg"
+}]]);
+/**
+* @license lucide-react v0.511.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Link2 = createLucideIcon("link-2", [
+	["path", {
+		d: "M9 17H7A5 5 0 0 1 7 7h2",
+		key: "8i5ue5"
+	}],
+	["path", {
+		d: "M15 7h2a5 5 0 1 1 0 10h-2",
+		key: "1b9ql8"
+	}],
+	["line", {
+		x1: "8",
+		x2: "16",
+		y1: "12",
+		y2: "12",
+		key: "1jonct"
+	}]
+]);
 /**
 * @license lucide-react v0.511.0 - ISC
 *
@@ -36464,6 +36724,30 @@ var LogOut = createLucideIcon("log-out", [
 	["path", {
 		d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4",
 		key: "1uf3rs"
+	}]
+]);
+/**
+* @license lucide-react v0.511.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var MailPlus = createLucideIcon("mail-plus", [
+	["path", {
+		d: "M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8",
+		key: "12jkf8"
+	}],
+	["path", {
+		d: "m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7",
+		key: "1ocrg3"
+	}],
+	["path", {
+		d: "M19 16v6",
+		key: "tddt3s"
+	}],
+	["path", {
+		d: "M16 19h6",
+		key: "xwg31i"
 	}]
 ]);
 /**
@@ -36576,26 +36860,6 @@ var ShieldCheck = createLucideIcon("shield-check", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var ShieldX = createLucideIcon("shield-x", [
-	["path", {
-		d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
-		key: "oel41y"
-	}],
-	["path", {
-		d: "m14.5 9.5-5 5",
-		key: "17q4r4"
-	}],
-	["path", {
-		d: "m9.5 9.5 5 5",
-		key: "18nt4w"
-	}]
-]);
-/**
-* @license lucide-react v0.511.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var UserCheck = createLucideIcon("user-check", [
 	["path", {
 		d: "m16 11 2 2 4-4",
@@ -36666,6 +36930,38 @@ var UserCog = createLucideIcon("user-cog", [
 		cy: "7",
 		r: "4",
 		key: "nufk8"
+	}]
+]);
+/**
+* @license lucide-react v0.511.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var UserPlus = createLucideIcon("user-plus", [
+	["path", {
+		d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",
+		key: "1yyitq"
+	}],
+	["circle", {
+		cx: "9",
+		cy: "7",
+		r: "4",
+		key: "nufk8"
+	}],
+	["line", {
+		x1: "19",
+		x2: "19",
+		y1: "8",
+		y2: "14",
+		key: "1bvyxn"
+	}],
+	["line", {
+		x1: "22",
+		x2: "16",
+		y1: "11",
+		y2: "11",
+		key: "1shjgl"
 	}]
 ]);
 /**
@@ -36832,7 +37128,35 @@ function Header({ active, onNavigate, isAuthenticated, displayName, showAdmin = 
 		]
 	});
 }
-// src/components/Layout.tsx
+/** Moment this build was made, as a UTC ISO 8601 string. */
+var BUILD_TIMESTAMP = "2026-11-07T14:20:00Z";
+var MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec"
+];
+/** Format the build timestamp deterministically as "Nov 7, 2026 10:40". */
+function formatBuildTimestamp(iso) {
+	const date = new Date(iso);
+	if (Number.isNaN(date.getTime())) return "";
+	return `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()} ${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+}
+/** "Preview" on a draft web address, "Live" otherwise. */
+function buildEnvironment() {
+	if (typeof window === "undefined" || !window.location) return "Live";
+	const hostname = window.location.hostname ?? "";
+	const href = window.location.href ?? "";
+	return /-draft/i.test(hostname) || /-draft/i.test(href) ? "Preview" : "Live";
+}
 function Layout({ children, header }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex min-h-screen flex-col bg-background",
@@ -36846,19 +37170,26 @@ function Layout({ children, header }) {
 				className: "surface-sunken border-t border-border",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 md:flex-row md:items-center md:justify-between md:px-6",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "space-y-1",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: "font-display text-sm font-semibold text-foreground",
-							children: branding.organizationName
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "space-y-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-display text-sm font-semibold text-foreground",
+								children: branding.organizationName
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "text-xs text-muted-foreground",
+								children: branding.tagline
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "text-xs text-muted-foreground",
-							children: branding.tagline
-						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-xs text-muted-foreground",
-						children: "Powered by the Internet Computer"
-					})]
+							children: "Powered by the Internet Computer"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-muted-foreground",
+							children: `Build v22 · ${buildEnvironment()} · ${formatBuildTimestamp(BUILD_TIMESTAMP)}`
+						})
+					]
 				})
 			})
 		]
@@ -37165,8 +37496,8 @@ function useSaveProfile() {
 		}
 	});
 }
-/** Submit a sign-up request for the signed-in user. */
-function useRegisterProfile() {
+/** Update the signed-in user's own details. */
+function useUpdateProfile() {
 	return useSaveProfile();
 }
 /** True only when the signed-in caller's profile is Approved. */
@@ -37217,6 +37548,28 @@ function useSendMessage(other) {
 		}
 	});
 }
+/**
+* Redeem an invite from its link token and 6-digit code. The backend returns a
+* Result value: a matching pair creates and approves the caller's account, and
+* every failure (wrong code, expired, cancelled, used, not found) is returned
+* as a value rather than thrown.
+*/
+function useRedeemInvite() {
+	const { actor } = useActor(createActor);
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async ({ linkToken, code }) => {
+			if (!actor) throw new Error("Backend is not ready");
+			return actor.redeemInvite(linkToken, code);
+		},
+		onSuccess: (result) => {
+			if (result.__kind__ === "ok") {
+				queryClient.invalidateQueries({ queryKey: profileKeys.me });
+				queryClient.invalidateQueries({ queryKey: profileKeys.directory });
+			}
+		}
+	});
+}
 // src/components/SignupForm.tsx
 var FIELDS = [
 	{
@@ -37248,20 +37601,25 @@ var FIELDS = [
 		placeholder: "e.g. Policy Analyst"
 	}
 ];
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function validate(key, raw) {
+var EMAIL_PATTERN$1 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function validate$1(key, raw) {
 	const value = raw.trim();
 	if (value.length === 0) return "This field is required.";
 	if (key === "fullName" && value.length < 2) return "Enter at least 2 characters.";
-	if (key === "workEmail" && !EMAIL_PATTERN.test(value)) return "Enter a valid email address, such as name@yourorganization.com.";
+	if (key === "workEmail" && !EMAIL_PATTERN$1.test(value)) return "Enter a valid email address, such as name@yourorganization.com.";
 	return null;
 }
+/**
+* The signed-in user's own details form. Access is invitation-only, so this is
+* only ever used to update an existing profile — there is no public sign-up
+* path.
+*/
 function SignupForm({ profile, onDone, onCancel }) {
 	const [values, setValues] = (0, import_react.useState)({
-		fullName: profile?.fullName ?? "",
-		workEmail: profile?.workEmail ?? "",
-		department: profile?.department ?? "",
-		jobTitle: profile?.jobTitle ?? ""
+		fullName: profile.fullName,
+		workEmail: profile.workEmail,
+		department: profile.department,
+		jobTitle: profile.jobTitle
 	});
 	const [touched, setTouched] = (0, import_react.useState)({
 		fullName: false,
@@ -37270,18 +37628,17 @@ function SignupForm({ profile, onDone, onCancel }) {
 		jobTitle: false
 	});
 	const [submitted, setSubmitted] = (0, import_react.useState)(false);
-	const register = useRegisterProfile();
-	const isEditing = !!profile;
+	const update = useUpdateProfile();
 	const errors = {
-		fullName: validate("fullName", values.fullName),
-		workEmail: validate("workEmail", values.workEmail),
-		department: validate("department", values.department),
-		jobTitle: validate("jobTitle", values.jobTitle)
+		fullName: validate$1("fullName", values.fullName),
+		workEmail: validate$1("workEmail", values.workEmail),
+		department: validate$1("department", values.department),
+		jobTitle: validate$1("jobTitle", values.jobTitle)
 	};
 	const valid = Object.values(errors).every((e) => e === null);
 	const handleSubmit = (event) => {
 		event.preventDefault();
-		if (register.isPending) return;
+		if (update.isPending) return;
 		setSubmitted(true);
 		if (!valid) {
 			setTouched({
@@ -37292,7 +37649,7 @@ function SignupForm({ profile, onDone, onCancel }) {
 			});
 			return;
 		}
-		register.mutate({
+		update.mutate({
 			fullName: values.fullName.trim(),
 			workEmail: values.workEmail.trim(),
 			department: values.department.trim(),
@@ -37318,13 +37675,13 @@ function SignupForm({ profile, onDone, onCancel }) {
 							children: branding.organizationName
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 							className: "font-display text-xl font-semibold tracking-tight text-foreground",
-							children: isEditing ? "Update your details" : "Request access"
+							children: "Update your details"
 						})]
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					className: "mt-4 text-sm text-muted-foreground",
-					children: isEditing ? "Keep your details current so your access request can be reviewed." : "Provide your work details. The first person to register becomes the administrator and approves everyone who follows; after that, an administrator reviews each request before you can use the directory."
+					children: "Keep your details current so colleagues can find you in the directory."
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
 					onSubmit: handleSubmit,
@@ -37369,33 +37726,33 @@ function SignupForm({ profile, onDone, onCancel }) {
 								]
 							}, field.key);
 						}),
-						register.isError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						update.isError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							"data-ocid": "signup.error_state",
 							role: "alert",
 							className: "rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive",
 							children: "We could not save your details. Please try again."
 						}) : null,
-						register.isSuccess ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("output", {
+						update.isSuccess ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("output", {
 							"data-ocid": "signup.success_state",
 							className: "flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, {
 								className: "h-4 w-4 shrink-0",
 								"aria-hidden": "true"
-							}), isEditing ? "Your details have been saved." : "Your access request has been submitted."]
+							}), "Your details have been saved."]
 						}) : null,
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
 							type: "submit",
 							"data-ocid": "signup.submit_button",
-							disabled: register.isPending,
+							disabled: update.isPending,
 							className: "w-full rounded-md",
-							children: register.isPending ? "Saving…" : isEditing ? "Save details" : "Submit request"
+							children: update.isPending ? "Saving…" : "Save details"
 						}),
 						onCancel ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
 							type: "button",
 							variant: "ghost",
 							"data-ocid": "signup.cancel_button",
 							onClick: onCancel,
-							disabled: register.isPending,
+							disabled: update.isPending,
 							className: "w-full rounded-md",
 							children: "Cancel"
 						}) : null
@@ -37405,108 +37762,40 @@ function SignupForm({ profile, onDone, onCancel }) {
 		})
 	});
 }
-// src/components/ui/badge.tsx
-var badgeVariants = cva("inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden", {
-	variants: { variant: {
-		default: "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
-		secondary: "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
-		destructive: "border-transparent bg-destructive text-destructive-foreground [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-		outline: "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
-	} },
-	defaultVariants: { variant: "default" }
-});
-function Badge({ className, variant, asChild = false, ...props }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(asChild ? Slot : "span", {
-		"data-slot": "badge",
-		className: cn(badgeVariants({ variant }), className),
-		...props
-	});
-}
 // src/components/StatusScreen.tsx
-var AWAITING_APPROVAL_MESSAGE = "Your access request is awaiting approval by an administrator";
-var STATUS_LABEL = {
-	[Status.pending]: "Pending",
-	[Status.denied]: "Denied",
-	[Status.suspended]: "Suspended",
-	[Status.approved]: "Approved"
-};
-var STATUS_ICON = {
-	[Status.pending]: Clock,
-	[Status.denied]: ShieldX,
-	[Status.suspended]: ShieldAlert,
-	[Status.approved]: Clock
-};
-function StatusScreen({ profile, onEditDetails }) {
-	const Icon = STATUS_ICON[profile.status];
-	const label = STATUS_LABEL[profile.status];
-	const showBadge = profile.status !== Status.pending;
-	const detailsIncomplete = !profile.workEmail.trim() || !profile.department.trim() || !profile.jobTitle.trim();
+/**
+* The single message shown to any signed-in caller who does not have an
+* approved account. Access is invitation-only, so this screen offers no form,
+* no status detail and no action — only the instruction to contact an
+* administrator.
+*/
+var AWAITING_APPROVAL_MESSAGE = "Access is by invitation. Contact your organization's administrator.";
+/**
+* The non-approved screen. It renders only the invitation message so no public
+* sign-up path and no self-service action remain for a caller the backend has
+* not approved.
+*/
+function StatusScreen() {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		className: "mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-8 md:py-12",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			"data-ocid": "status.panel",
 			className: "rounded-lg border border-border bg-card p-6 shadow-card-resting md:p-8",
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(VaultLogo, {
-						size: 44,
-						title: `${branding.organizationName} emblem`,
-						className: "rounded-sm border border-border p-1"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground",
-						children: branding.organizationName
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "mt-6 flex items-start gap-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-primary",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {
-							className: "h-5 w-5",
-							"aria-hidden": "true"
-						})
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "min-w-0",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-							"data-ocid": "status.name",
-							className: "break-words font-display text-xl font-semibold tracking-tight text-foreground",
-							children: profile.fullName
-						}), showBadge ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "mt-2 flex items-center gap-2",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "text-xs text-muted-foreground",
-								children: "Current status"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-								variant: "destructive",
-								"data-ocid": "status.badge",
-								className: "rounded-sm",
-								children: label
-							})]
-						}) : null]
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-ocid": "status.message",
-					className: "mt-4 text-sm leading-relaxed text-foreground",
-					children: AWAITING_APPROVAL_MESSAGE
-				}),
-				onEditDetails && detailsIncomplete ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-ocid": "status.incomplete_notice",
-					className: "mt-6 rounded-md border border-border bg-muted px-4 py-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-sm text-foreground",
-						children: "Your profile is missing some details. Add your work email, department and job title so an administrator can review your request."
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-						type: "button",
-						variant: "outline",
-						"data-ocid": "status.edit_button",
-						onClick: onEditDetails,
-						className: "mt-3 w-full rounded-md",
-						children: "Complete your details"
-					})]
-				}) : null
-			]
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-3",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(VaultLogo, {
+					size: 44,
+					title: `${branding.organizationName} emblem`,
+					className: "rounded-sm border border-border p-1"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground",
+					children: branding.organizationName
+				})]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				"data-ocid": "status.message",
+				className: "mt-6 text-base leading-relaxed text-foreground",
+				children: AWAITING_APPROVAL_MESSAGE
+			})]
 		})
 	});
 }
@@ -37514,7 +37803,8 @@ function StatusScreen({ profile, onEditDetails }) {
 var adminKeys = {
 	pending: ["admin", "pending"],
 	approved: ["admin", "approved"],
-	suspended: ["admin", "suspended"]
+	suspended: ["admin", "suspended"],
+	invites: ["admin", "invites"]
 };
 /** True when the caller is an Approved Super Admin or Department Admin. */
 function useIsAdmin() {
@@ -37597,6 +37887,47 @@ function useRemoveDepartmentAdmin() {
 function useSetDemoAccount() {
 	return useAdminMutation((actor, { user, isDemo }) => actor.setDemoAccount(user, isDemo));
 }
+/** Invites visible to the caller: all for a Super Admin, own department otherwise. */
+function useInvites() {
+	const { actor, isFetching } = useActor(createActor);
+	const isAdmin = useIsAdmin();
+	return useQuery({
+		queryKey: adminKeys.invites,
+		queryFn: async () => {
+			if (!actor) return [];
+			return actor.listInvites();
+		},
+		enabled: isAdmin && !!actor && !isFetching
+	});
+}
+/** Create a single-use invite. The backend enforces department scope. */
+function useCreateInvite() {
+	const { actor } = useActor(createActor);
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (input) => {
+			if (!actor) throw new Error("Backend is not ready");
+			return actor.createInvite(input.fullName, input.workEmail, input.phone, input.department, input.role);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: adminKeys.invites });
+		}
+	});
+}
+/** Cancel a pending invite by its id. */
+function useCancelInvite() {
+	const { actor } = useActor(createActor);
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (inviteId) => {
+			if (!actor) throw new Error("Backend is not ready");
+			return actor.cancelInvite(inviteId);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: adminKeys.invites });
+		}
+	});
+}
 // src/hooks/useAuth.ts
 /**
 * Thin wrapper over the platform Internet Identity context. Internet Identity
@@ -37664,6 +37995,139 @@ function applyBrandingTheme() {
 		root.style.setProperty("--accent", accent);
 		root.style.setProperty("--rule-gold", accent);
 	}
+}
+// src/components/InviteRedeem.tsx
+/**
+* Human-readable message for each backend redemption failure. Every rejection
+* the backend can return is named explicitly, including how many attempts
+* remain before a wrong code cancels the invite.
+*/
+function redeemErrorMessage$1(error) {
+	switch (error.__kind__) {
+		case "wrongCode": return `That code is not correct. ${error.wrongCode.remaining.toString()} attempt${error.wrongCode.remaining === 1n ? "" : "s"} remaining before this invite is cancelled.`;
+		case "tooManyAttempts": return "Too many incorrect codes. This invite has been cancelled. Contact your organization's administrator.";
+		case "expired": return "This invite has expired. Contact your organization's administrator for a new one.";
+		case "cancelled": return "This invite has been cancelled. Contact your organization's administrator.";
+		case "used": return "This invite has already been used.";
+		case "notFound": return "This invite link is not valid. Check that you opened the full link from your invitation.";
+	}
+}
+/**
+* The 6-digit code entry surface reached from an invite link after Internet
+* Identity sign-in. A matching link token and code create and approve the
+* caller's account with the department and role the administrator set. Every
+* rejection is shown as a clear, specific message, and a successful redemption
+* hands control back through `onRedeemed` so the caller can clear the token.
+*/
+function InviteRedeem({ linkToken, onRedeemed, className }) {
+	const [code, setCode] = (0, import_react.useState)("");
+	const redeem = useRedeemInvite();
+	const digits = code.replace(/\D/g, "").slice(0, 6);
+	const canSubmit = digits.length === 6 && !redeem.isPending;
+	const result = redeem.data;
+	const failure = result && result.__kind__ === "err" ? result.err : null;
+	const succeeded = result !== void 0 && result.__kind__ === "ok";
+	const handleSubmit = (event) => {
+		event.preventDefault();
+		if (!canSubmit) return;
+		redeem.mutate({
+			linkToken,
+			code: digits
+		}, { onSuccess: (value) => {
+			if (value.__kind__ === "ok") onRedeemed();
+		} });
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-ocid": "invite.panel",
+		className: `rounded-lg border border-border bg-card p-6 shadow-card-resting md:p-8 ${className ?? ""}`,
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mb-2 flex items-center gap-3",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(VaultLogo, {
+					size: 44,
+					title: `${branding.organizationName} emblem`,
+					className: "rounded-sm border border-border p-1"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "min-w-0",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground",
+						children: branding.organizationName
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+						className: "font-display text-xl font-semibold tracking-tight text-foreground",
+						children: "Enter your invite code"
+					})]
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-4 text-sm text-muted-foreground",
+				children: "Your invitation link is recognised. Enter the 6-digit code your administrator gave you to activate your account."
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+				onSubmit: handleSubmit,
+				noValidate: true,
+				className: "mt-6 space-y-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label, {
+							htmlFor: "invite-code",
+							children: "6-digit code"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							id: "invite-code",
+							"data-ocid": "invite.code.input",
+							inputMode: "numeric",
+							autoComplete: "one-time-code",
+							pattern: "[0-9]*",
+							maxLength: 6,
+							value: digits,
+							placeholder: "000000",
+							"aria-invalid": failure ? true : void 0,
+							"aria-describedby": failure ? "invite-code-error" : void 0,
+							onChange: (event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6)),
+							className: "font-mono text-lg tracking-[0.5em]"
+						})]
+					}),
+					failure ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+						id: "invite-code-error",
+						"data-ocid": "invite.error_state",
+						role: "alert",
+						className: "flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldAlert, {
+							className: "mt-0.5 size-4 shrink-0",
+							"aria-hidden": "true"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "min-w-0 break-words",
+							children: redeemErrorMessage$1(failure)
+						})]
+					}) : null,
+					redeem.isError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						"data-ocid": "invite.request_error_state",
+						role: "alert",
+						className: "rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive",
+						children: "We could not reach the service. Please try again."
+					}) : null,
+					succeeded ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("output", {
+						"data-ocid": "invite.success_state",
+						className: "flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, {
+							className: "size-4 shrink-0",
+							"aria-hidden": "true"
+						}), "Your account is active. Opening the directory…"]
+					}) : null,
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+						type: "submit",
+						"data-ocid": "invite.submit_button",
+						disabled: !canSubmit,
+						className: "w-full rounded-md",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
+							className: "size-4",
+							"aria-hidden": "true"
+						}), redeem.isPending ? "Activating…" : "Activate account"]
+					})
+				]
+			})
+		]
+	});
 }
 // src/components/VaultWheel.tsx
 /**
@@ -37748,7 +38212,7 @@ function VaultWheel({ className, animate = false, title = "Capabilities of the s
 					const x = centre + Math.cos(angle) * radius;
 					const y = centre + Math.sin(angle) * radius;
 					return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: cn("absolute flex size-[34%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border p-1.5 text-center text-[0.6rem] font-medium leading-tight sm:text-[0.7rem]", node.roadmap ? "border-dashed border-border bg-background/70 text-muted-foreground/70" : "border-primary/40 bg-card text-foreground shadow-card-resting", animate && "wheel-node motion-safe:animate-wheel-node"),
+						className: cn("absolute flex size-[30.6%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border p-1.5 text-center text-[0.6rem] font-medium leading-tight sm:text-[0.7rem]", node.roadmap ? "border-dashed border-border bg-background/70 text-muted-foreground/70" : "border-primary/40 bg-card text-foreground shadow-card-resting", animate && "wheel-node motion-safe:animate-wheel-node"),
 						style: {
 							left: `${x}%`,
 							top: `${y}%`,
@@ -37798,8 +38262,8 @@ function prefersReducedMotion() {
 	if (typeof window === "undefined" || !window.matchMedia) return false;
 	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
-function LoginPage({ onOpenAbout }) {
-	const { login, isLoggingIn, isLoginError, loginError } = useAuth();
+function LoginPage({ onOpenAbout, inviteToken, onInviteRedeemed }) {
+	const { login, isLoggingIn, isLoginError, loginError, isAuthenticated } = useAuth();
 	const [introDone, setIntroDone] = (0, import_react.useState)(() => prefersReducedMotion());
 	const [introReady, setIntroReady] = (0, import_react.useState)(() => prefersReducedMotion());
 	const [imageLoaded, setImageLoaded] = (0, import_react.useState)(false);
@@ -37824,6 +38288,31 @@ function LoginPage({ onOpenAbout }) {
 			}
 		};
 	}, [introDone, introReady]);
+	if (inviteToken && isAuthenticated) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "relative isolate overflow-hidden",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			"aria-hidden": "true",
+			className: "pointer-events-none fixed inset-0 -z-10 bg-primary",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+				src: VAULT_IMAGE,
+				alt: "",
+				width: 1600,
+				height: 893,
+				sizes: "100vw",
+				loading: "eager",
+				decoding: "async",
+				fetchPriority: "high",
+				onLoad: () => setImageLoaded(true),
+				className: `h-full w-full object-cover transition-opacity duration-700 ease-out ${imageLoaded ? "opacity-40" : "opacity-0"}`
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute inset-0 bg-primary/70" })]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-8 md:py-12",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InviteRedeem, {
+				linkToken: inviteToken,
+				onRedeemed: () => onInviteRedeemed?.()
+			})
+		})]
+	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "relative isolate overflow-hidden",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -37897,7 +38386,7 @@ function LoginPage({ onOpenAbout }) {
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "max-w-md text-sm text-white/80",
-							children: "A directory and direct messaging service for your organization's staff. Access is granted through Internet Identity — the only supported sign-in method."
+							children: inviteToken ? "You have been invited to join. Sign in with Internet Identity to continue, then enter the 6-digit code your administrator gave you." : "A directory and direct messaging service for your organization's staff. Access is granted through Internet Identity — the only supported sign-in method."
 						})
 					]
 				}),
@@ -37912,7 +38401,7 @@ function LoginPage({ onOpenAbout }) {
 								className: "rounded-full border border-border p-1"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 								className: "font-display text-base font-semibold text-foreground",
-								children: "Sign in"
+								children: inviteToken ? "Accept your invitation" : "Sign in"
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 								className: "text-xs text-muted-foreground",
 								children: "Internet Identity required"
@@ -38071,6 +38560,338 @@ function AboutPage({ onBackToLogin }) {
 		})
 	});
 }
+// src/components/InviteCreateForm.tsx
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+var ROLE_OPTIONS = [
+	{
+		value: Role.member,
+		label: "Member"
+	},
+	{
+		value: Role.departmentAdmin,
+		label: "Department Admin"
+	},
+	{
+		value: Role.superAdmin,
+		label: "Super Admin"
+	}
+];
+/**
+* The roles an administrator may grant. Only a Super Admin may grant the
+* Super Admin role; a Department Admin is limited to Member and Department
+* Admin, matching the backend's invite rules.
+*/
+function grantableRoles(isSuper) {
+	return isSuper ? ROLE_OPTIONS : ROLE_OPTIONS.filter((option) => option.value !== Role.superAdmin);
+}
+function validate(key, raw) {
+	const value = raw.trim();
+	if (value.length === 0) return "This field is required.";
+	if (key === "fullName" && value.length < 2) return "Enter at least 2 characters.";
+	if (key === "workEmail" && !EMAIL_PATTERN.test(value)) return "Enter a valid email address, such as name@yourorganization.com.";
+	if (key === "phone" && value.replace(/\D/g, "").length < 7) return "Enter a valid phone number.";
+	return null;
+}
+/** The invite link an administrator sends by email: the app address plus the token. */
+function inviteLink(linkToken) {
+	if (typeof window === "undefined" || !window.location) return linkToken;
+	const { origin, pathname } = window.location;
+	return `${origin}${pathname}?invite=${encodeURIComponent(linkToken)}`;
+}
+function CopyField({ ocid, label, value, mono }) {
+	const [copied, setCopied] = (0, import_react.useState)(false);
+	const copy = async () => {
+		try {
+			await navigator.clipboard.writeText(value);
+			setCopied(true);
+			window.setTimeout(() => setCopied(false), 2e3);
+		} catch {
+			setCopied(false);
+		}
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "space-y-2",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label, {
+			htmlFor: `${ocid}-value`,
+			children: label
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex items-stretch gap-2",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+				id: `${ocid}-value`,
+				"data-ocid": `${ocid}.value`,
+				readOnly: true,
+				value,
+				onFocus: (event) => event.currentTarget.select(),
+				className: cn("min-w-0 flex-1", mono && "font-mono tracking-widest")
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+				type: "button",
+				variant: "outline",
+				"data-ocid": `${ocid}.copy_button`,
+				onClick: () => void copy(),
+				"aria-label": `Copy ${label.toLowerCase()}`,
+				children: [copied ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, {
+					className: "size-4",
+					"aria-hidden": "true"
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, {
+					className: "size-4",
+					"aria-hidden": "true"
+				}), copied ? "Copied" : "Copy"]
+			})]
+		})]
+	});
+}
+/**
+* The administrator's invite form. A Department Admin may only invite into
+* their own department; a Super Admin may choose any department. On success the
+* single-use link and the separate 6-digit code are shown so the administrator
+* can send the link by email and the code by text or phone.
+*/
+function InviteCreateForm({ department, isSuper }) {
+	const [values, setValues] = (0, import_react.useState)({
+		fullName: "",
+		workEmail: "",
+		phone: "",
+		department: isSuper ? "" : department
+	});
+	const [role, setRole] = (0, import_react.useState)(Role.member);
+	const [touched, setTouched] = (0, import_react.useState)({
+		fullName: false,
+		workEmail: false,
+		phone: false,
+		department: false
+	});
+	const [submitted, setSubmitted] = (0, import_react.useState)(false);
+	const [created, setCreated] = (0, import_react.useState)(null);
+	const create = useCreateInvite();
+	const roleOptions = grantableRoles(isSuper);
+	const errors = {
+		fullName: validate("fullName", values.fullName),
+		workEmail: validate("workEmail", values.workEmail),
+		phone: validate("phone", values.phone),
+		department: validate("department", values.department)
+	};
+	const valid = Object.values(errors).every((e) => e === null);
+	const setField = (key, value) => setValues((prev) => ({
+		...prev,
+		[key]: value
+	}));
+	const handleSubmit = (event) => {
+		event.preventDefault();
+		if (create.isPending) return;
+		setSubmitted(true);
+		if (!valid) {
+			setTouched({
+				fullName: true,
+				workEmail: true,
+				phone: true,
+				department: true
+			});
+			return;
+		}
+		const input = {
+			fullName: values.fullName.trim(),
+			workEmail: values.workEmail.trim(),
+			phone: values.phone.trim(),
+			department: values.department.trim(),
+			role
+		};
+		create.mutate(input, { onSuccess: (invite) => {
+			setCreated(invite);
+			setValues({
+				fullName: "",
+				workEmail: "",
+				phone: "",
+				department: isSuper ? "" : department
+			});
+			setRole(Role.member);
+			setTouched({
+				fullName: false,
+				workEmail: false,
+				phone: false,
+				department: false
+			});
+			setSubmitted(false);
+		} });
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "space-y-5 p-4 md:p-5",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			onSubmit: handleSubmit,
+			noValidate: true,
+			className: "space-y-4",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid gap-4 md:grid-cols-2",
+					children: [[
+						{
+							key: "fullName",
+							label: "Full name",
+							type: "text",
+							autoComplete: "name",
+							placeholder: "e.g. Jordan Whitfield",
+							locked: false
+						},
+						{
+							key: "workEmail",
+							label: "Work email",
+							type: "email",
+							autoComplete: "email",
+							placeholder: "name@yourorganization.com",
+							locked: false
+						},
+						{
+							key: "phone",
+							label: "Phone number",
+							type: "tel",
+							autoComplete: "tel",
+							placeholder: "e.g. +1 555 010 4477",
+							locked: false
+						},
+						{
+							key: "department",
+							label: "Department",
+							type: "text",
+							autoComplete: "organization",
+							placeholder: "e.g. Finance",
+							locked: !isSuper
+						}
+					].map((field) => {
+						const showError = (touched[field.key] || submitted) && errors[field.key];
+						const errorId = `invite-${field.key}-error`;
+						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "space-y-2",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label, {
+									htmlFor: `invite-${field.key}`,
+									children: field.label
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+									id: `invite-${field.key}`,
+									"data-ocid": `admin.invite.${field.key}.input`,
+									type: field.type,
+									value: values[field.key],
+									placeholder: field.placeholder,
+									autoComplete: field.autoComplete,
+									maxLength: 120,
+									readOnly: field.locked,
+									"aria-readonly": field.locked || void 0,
+									"aria-invalid": showError ? true : void 0,
+									"aria-describedby": showError ? errorId : void 0,
+									onBlur: () => setTouched((prev) => ({
+										...prev,
+										[field.key]: true
+									})),
+									onChange: (event) => setField(field.key, event.target.value),
+									className: cn(field.locked && "bg-muted text-muted-foreground")
+								}),
+								field.locked ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-xs text-muted-foreground",
+									children: "Locked to your department."
+								}) : null,
+								showError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									id: errorId,
+									"data-ocid": `admin.invite.${field.key}.field_error`,
+									className: "text-xs text-destructive",
+									children: errors[field.key]
+								}) : null
+							]
+						}, field.key);
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label, {
+							htmlFor: "invite-role",
+							children: "Role"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
+							id: "invite-role",
+							"data-ocid": "admin.invite.role.select",
+							value: role,
+							onChange: (event) => setRole(event.target.value),
+							className: "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+							children: roleOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+								value: option.value,
+								children: option.label
+							}, option.value))
+						})]
+					})]
+				}),
+				create.isError ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+					"data-ocid": "admin.invite.error_state",
+					role: "alert",
+					className: "flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldAlert, {
+						className: "mt-0.5 size-4 shrink-0",
+						"aria-hidden": "true"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "min-w-0 break-words",
+						children: create.error instanceof Error && create.error.message ? create.error.message : "The invite could not be created. Please try again."
+					})]
+				}) : null,
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+					type: "submit",
+					"data-ocid": "admin.invite.create_button",
+					disabled: create.isPending,
+					className: "rounded-md",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UserPlus, {
+						className: "size-4",
+						"aria-hidden": "true"
+					}), create.isPending ? "Creating invite…" : "Create invite"]
+				})
+			]
+		}), created ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			"data-ocid": "admin.invite.created_panel",
+			className: "space-y-4 rounded-md border border-border bg-secondary p-4",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-start gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
+						className: "mt-0.5 size-4 shrink-0 text-foreground",
+						"aria-hidden": "true"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							className: "font-medium text-foreground",
+							children: ["Invite ready for ", created.fullName]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-sm text-muted-foreground",
+							children: "Send the link by email and the code separately by text or phone. Each works once and expires in 7 days."
+						})]
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CopyField, {
+					ocid: "admin.invite.link",
+					label: "Invite link (send by email)",
+					value: inviteLink(created.linkToken)
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CopyField, {
+					ocid: "admin.invite.code",
+					label: "6-digit code (send by text or phone)",
+					value: created.code,
+					mono: true
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2 text-xs text-muted-foreground",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link2, {
+						className: "size-3.5 shrink-0",
+						"aria-hidden": "true"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+						created.department,
+						" ·",
+						" ",
+						ROLE_OPTIONS.find((o) => o.value === created.role)?.label ?? created.role
+					] })]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					type: "button",
+					variant: "outline",
+					"data-ocid": "admin.invite.done_button",
+					onClick: () => setCreated(null),
+					className: "rounded-md",
+					children: "Done"
+				})
+			]
+		}) : null]
+	});
+}
 // src/components/MessageBubble.tsx
 /** Convert a Motoko nanosecond timestamp into a short local time label. */
 function formatTimestamp(timestamp) {
@@ -38100,12 +38921,166 @@ function MessageBubble({ message, mine, index }) {
 		})
 	});
 }
+// src/components/ui/badge.tsx
+var badgeVariants = cva("inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden", {
+	variants: { variant: {
+		default: "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+		secondary: "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+		destructive: "border-transparent bg-destructive text-destructive-foreground [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+		outline: "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+	} },
+	defaultVariants: { variant: "default" }
+});
+function Badge({ className, variant, asChild = false, ...props }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(asChild ? Slot : "span", {
+		"data-slot": "badge",
+		className: cn(badgeVariants({ variant }), className),
+		...props
+	});
+}
 // src/components/ui/skeleton.tsx
 function Skeleton({ className, ...props }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		"data-slot": "skeleton",
 		className: cn("bg-accent animate-pulse rounded-md", className),
 		...props
+	});
+}
+// src/components/InviteList.tsx
+var STATUS_LABEL = {
+	[InviteStatus.pending]: "Pending",
+	[InviteStatus.used]: "Used",
+	[InviteStatus.expired]: "Expired",
+	[InviteStatus.cancelled]: "Cancelled"
+};
+var STATUS_CLASS = {
+	[InviteStatus.pending]: "border-accent bg-accent/15 text-foreground",
+	[InviteStatus.used]: "border-border bg-secondary text-foreground",
+	[InviteStatus.expired]: "border-border bg-muted text-muted-foreground",
+	[InviteStatus.cancelled]: "border-destructive/40 bg-destructive/10 text-destructive"
+};
+function StatusBadge({ status }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
+		variant: "outline",
+		className: cn("border", STATUS_CLASS[status]),
+		children: STATUS_LABEL[status]
+	});
+}
+function InviteSkeleton() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		"data-ocid": "admin.invites.loading_state",
+		className: "space-y-3 p-4",
+		children: [
+			"a",
+			"b",
+			"c"
+		].map((id) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Skeleton, { className: "h-16 w-full" }, id))
+	});
+}
+function EmptyState$1() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-ocid": "admin.invites.empty_state",
+		className: "flex flex-col items-center gap-2 px-4 py-10 text-center",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MailPlus, {
+					className: "size-5",
+					"aria-hidden": "true"
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "font-medium text-foreground",
+				children: "No invites yet"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "max-w-sm text-sm text-muted-foreground",
+				children: "Invites you create will be listed here with their status."
+			})
+		]
+	});
+}
+/**
+* Every invite the caller may see, with its status, who created it and when.
+* A pending invite can be cancelled from the list.
+*/
+function InviteList({ invites, isLoading, isError }) {
+	const cancel = useCancelInvite();
+	if (isLoading) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InviteSkeleton, {});
+	if (isError) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-ocid": "admin.invites.error_state",
+		className: "flex flex-col items-center gap-2 px-4 py-10 text-center",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldAlert, {
+					className: "size-5",
+					"aria-hidden": "true"
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "font-medium text-foreground",
+				children: "Invites could not be loaded"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "max-w-sm text-sm text-muted-foreground",
+				children: "Refresh the page to try again."
+			})
+		]
+	});
+	if (invites.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState$1, {});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+		"data-ocid": "admin.invites.list",
+		className: "divide-y divide-border",
+		children: invites.map((invite, i) => {
+			const n = i + 1;
+			const isPending = invite.status === InviteStatus.pending;
+			const busy = cancel.isPending && cancel.variables === invite.id;
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+				"data-ocid": `admin.invites.item.${n}`,
+				className: "flex flex-col gap-3 px-4 py-4 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1.2fr)_auto] md:items-center md:gap-5 md:px-5",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "break-words font-medium text-foreground",
+							children: invite.fullName
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "break-all text-sm text-muted-foreground",
+							children: invite.workEmail
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0 text-sm text-muted-foreground",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-foreground",
+							children: invite.department
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { children: [
+							"Created by ",
+							invite.createdBy.toString().slice(0, 12),
+							"… on",
+							" ",
+							formatTimestamp(invite.createdAt) || "an unknown date"
+						] })]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap items-center gap-2 md:justify-end",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusBadge, { status: invite.status }), isPending ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+							type: "button",
+							size: "sm",
+							variant: "destructive",
+							"data-ocid": `admin.invites.cancel_button.${n}`,
+							disabled: busy,
+							onClick: () => cancel.mutate(invite.id),
+							children: [busy ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, {
+								className: "size-4",
+								"aria-hidden": "true"
+							}), "Cancel"]
+						}) : null]
+					})
+				]
+			}, invite.id.toString());
+		})
 	});
 }
 // src/pages/AdminPage.tsx
@@ -38217,6 +39192,7 @@ function AdminPage({ profile }) {
 	const pending = usePendingRequests();
 	const approved = useApprovedUsers();
 	const suspended = useSuspendedUsers();
+	const invites = useInvites();
 	const approve = useApproveUser();
 	const deny = useDenyUser();
 	const suspend = useSuspendUser();
@@ -38233,6 +39209,7 @@ function AdminPage({ profile }) {
 	const pendingList = pending.data ?? [];
 	const approvedList = approved.data ?? [];
 	const suspendedList = suspended.data ?? [];
+	const inviteList = invites.data ?? [];
 	function run(start, success) {
 		start({
 			onSuccess: () => setNotice({
@@ -38304,6 +39281,26 @@ function AdminPage({ profile }) {
 						})
 					})
 				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionShell, {
+				ocid: "admin.invite",
+				title: "Create invite",
+				description: isSuper ? "Invite a new staff member into any department." : `Invite a new staff member into ${profile.department}.`,
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InviteCreateForm, {
+					department: profile.department,
+					isSuper
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionShell, {
+				ocid: "admin.invites",
+				title: "Invites",
+				description: isSuper ? "Every invite across all departments, with its status." : `Invites for ${profile.department}, with their status.`,
+				count: invites.isSuccess ? inviteList.length : void 0,
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InviteList, {
+					invites: inviteList,
+					isLoading: invites.isLoading,
+					isError: invites.isError
+				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionShell, {
 				ocid: "admin.pending",
@@ -38909,12 +39906,160 @@ function DirectoryPage({ me, onEditProfile }) {
 		})]
 	});
 }
+// src/pages/RedeemInvitePage.tsx
+/** Human-readable message for each backend redemption failure. */
+function redeemErrorMessage(error) {
+	switch (error.__kind__) {
+		case "wrongCode": return `That code is not correct. ${error.wrongCode.remaining.toString()} attempt${error.wrongCode.remaining === 1n ? "" : "s"} remaining.`;
+		case "tooManyAttempts": return "Too many incorrect codes. This invite has been cancelled. Contact your organization's administrator.";
+		case "expired": return "This invite has expired. Contact your organization's administrator for a new one.";
+		case "cancelled": return "This invite has been cancelled. Contact your organization's administrator.";
+		case "used": return "This invite has already been used.";
+		case "notFound": return "This invite link is not valid. Check that you opened the full link from your invitation.";
+	}
+}
+/**
+* The 6-digit code entry screen reached from an invite link after Internet
+* Identity sign-in. A matching link token and code create and approve the
+* caller's account with the department and role the administrator set.
+*/
+function RedeemInvitePage({ linkToken, onRedeemed }) {
+	const [code, setCode] = (0, import_react.useState)("");
+	const redeem = useRedeemInvite();
+	const digits = code.replace(/\D/g, "").slice(0, 6);
+	const canSubmit = digits.length === 6 && !redeem.isPending;
+	const result = redeem.data;
+	const failure = result && result.__kind__ === "err" ? result.err : null;
+	const handleSubmit = (event) => {
+		event.preventDefault();
+		if (!canSubmit) return;
+		redeem.mutate({
+			linkToken,
+			code: digits
+		}, { onSuccess: (value) => {
+			if (value.__kind__ === "ok") onRedeemed();
+		} });
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-4 py-8 md:py-12",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			"data-ocid": "invite.panel",
+			className: "rounded-lg border border-border bg-card p-6 shadow-card-resting md:p-8",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mb-2 flex items-center gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(VaultLogo, {
+						size: 44,
+						title: `${branding.organizationName} emblem`,
+						className: "rounded-sm border border-border p-1"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground",
+							children: branding.organizationName
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+							className: "font-display text-xl font-semibold tracking-tight text-foreground",
+							children: "Enter your invite code"
+						})]
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-4 text-sm text-muted-foreground",
+					children: "Your invitation link is recognised. Enter the 6-digit code your administrator gave you to activate your account."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+					onSubmit: handleSubmit,
+					noValidate: true,
+					className: "mt-6 space-y-4",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "space-y-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label, {
+								htmlFor: "invite-code",
+								children: "6-digit code"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								id: "invite-code",
+								"data-ocid": "invite.code.input",
+								inputMode: "numeric",
+								autoComplete: "one-time-code",
+								pattern: "[0-9]*",
+								maxLength: 6,
+								value: digits,
+								placeholder: "000000",
+								"aria-invalid": failure ? true : void 0,
+								"aria-describedby": failure ? "invite-code-error" : void 0,
+								onChange: (event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6)),
+								className: "font-mono text-lg tracking-[0.5em]"
+							})]
+						}),
+						failure ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							id: "invite-code-error",
+							"data-ocid": "invite.error_state",
+							role: "alert",
+							className: "flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShieldAlert, {
+								className: "mt-0.5 size-4 shrink-0",
+								"aria-hidden": "true"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "min-w-0 break-words",
+								children: redeemErrorMessage(failure)
+							})]
+						}) : null,
+						redeem.isError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							"data-ocid": "invite.request_error_state",
+							role: "alert",
+							className: "rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive",
+							children: "We could not reach the service. Please try again."
+						}) : null,
+						result && result.__kind__ === "ok" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("output", {
+							"data-ocid": "invite.success_state",
+							className: "flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, {
+								className: "size-4 shrink-0",
+								"aria-hidden": "true"
+							}), "Your account is active. Opening the directory…"]
+						}) : null,
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+							type: "submit",
+							"data-ocid": "invite.submit_button",
+							disabled: !canSubmit,
+							className: "w-full rounded-md",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KeyRound, {
+								className: "size-4",
+								"aria-hidden": "true"
+							}), redeem.isPending ? "Activating…" : "Activate account"]
+						})
+					]
+				})
+			]
+		})
+	});
+}
 // src/App.tsx
+/**
+* The single-use invite token carried by an invite link. The link opens the app
+* with `?invite=<linkToken>` (or `#invite=<linkToken>`); the token is read once
+* on mount so it survives the Internet Identity sign-in round trip.
+*/
+function readInviteToken() {
+	if (typeof window === "undefined" || !window.location) return null;
+	try {
+		const fromQuery = new URLSearchParams(window.location.search).get("invite");
+		if (fromQuery) return fromQuery;
+		const hash = window.location.hash.replace(/^#/, "");
+		if (hash) {
+			const fromHash = new URLSearchParams(hash).get("invite");
+			if (fromHash) return fromHash;
+		}
+	} catch {}
+	return null;
+}
 function App() {
 	const { isAuthenticated, isInitializing, signOut } = useAuth();
 	const [nav, setNav] = (0, import_react.useState)("directory");
 	const [publicView, setPublicView] = (0, import_react.useState)("login");
 	const [editingProfile, setEditingProfile] = (0, import_react.useState)(false);
+	const [inviteToken, setInviteToken] = (0, import_react.useState)(() => readInviteToken());
 	const [entryVideoDone, setEntryVideoDone] = (0, import_react.useState)(() => shouldSkipEntryVideo());
 	(0, import_react.useEffect)(() => {
 		applyBrandingTheme();
@@ -38940,6 +40085,19 @@ function App() {
 			})
 		})
 	});
+	if (inviteToken) {
+		if (!isAuthenticated) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
+			header: null,
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginPage, { onOpenAbout: () => setPublicView("about") })
+		});
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
+			header: null,
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RedeemInvitePage, {
+				linkToken: inviteToken,
+				onRedeemed: () => setInviteToken(null)
+			})
+		});
+	}
 	if (!isAuthenticated) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
 		header: null,
 		children: publicView === "about" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AboutPage, { onBackToLogin: () => setPublicView("login") }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginPage, { onOpenAbout: () => setPublicView("about") })
@@ -38971,39 +40129,32 @@ function App() {
 			})]
 		})
 	});
-	if (!me || editingProfile) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
+	if (!me || !isApproved) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
 		header: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Header, {
 			active: nav,
 			onNavigate: setNav,
 			isAuthenticated,
 			displayName: me?.fullName,
-			hideNav: !isApproved,
+			hideNav: true,
+			onSignOut: handleSignOut
+		}),
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusScreen, {})
+	});
+	if (editingProfile) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
+		header: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Header, {
+			active: nav,
+			onNavigate: setNav,
+			isAuthenticated,
+			displayName: me.fullName,
 			showAdmin: isAdmin,
 			onSignOut: handleSignOut
 		}),
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SignupForm, {
 			profile: me,
 			onDone: () => setEditingProfile(false),
-			onCancel: me ? () => setEditingProfile(false) : void 0
+			onCancel: () => setEditingProfile(false)
 		})
 	});
-	if (!isApproved) {
-		const incomplete = me.status === Status.pending && (!me.workEmail.trim() || !me.department.trim() || !me.jobTitle.trim());
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
-			header: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Header, {
-				active: nav,
-				onNavigate: setNav,
-				isAuthenticated,
-				displayName: me.fullName,
-				hideNav: true,
-				onSignOut: handleSignOut
-			}),
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusScreen, {
-				profile: me,
-				onEditDetails: incomplete ? () => setEditingProfile(true) : void 0
-			})
-		});
-	}
 	const view = nav === "admin" && !isAdmin ? "directory" : nav;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
 		header: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Header, {

@@ -60,6 +60,21 @@ export type Error_ = {
         expected: Array<string>;
     };
 };
+export interface Invite {
+    id: bigint;
+    status: InviteStatus;
+    expiresAt: Timestamp;
+    workEmail: string;
+    code: string;
+    createdAt: Timestamp;
+    createdBy: UserId;
+    role: Role;
+    fullName: string;
+    wrongCodeAttempts: bigint;
+    linkToken: string;
+    phone: string;
+    department: string;
+}
 export interface Message {
     content: string;
     recipient: UserId;
@@ -77,17 +92,45 @@ export interface Profile {
     department: string;
     registeredAt: Timestamp;
 }
-export interface Result {
-    hasMore: boolean;
-    rows: Array<Array<Cell>>;
-}
-export type Result__1 = {
+export type RedeemError = {
+    __kind__: "wrongCode";
+    wrongCode: {
+        remaining: bigint;
+    };
+} | {
+    __kind__: "cancelled";
+    cancelled: null;
+} | {
+    __kind__: "expired";
+    expired: null;
+} | {
+    __kind__: "tooManyAttempts";
+    tooManyAttempts: null;
+} | {
+    __kind__: "used";
+    used: null;
+} | {
+    __kind__: "notFound";
+    notFound: null;
+};
+export type Result = {
+    __kind__: "ok";
+    ok: Profile;
+} | {
+    __kind__: "err";
+    err: RedeemError;
+};
+export type Result_1 = {
     __kind__: "ok";
     ok: null;
 } | {
     __kind__: "err";
     err: Error_;
 };
+export interface Result__1 {
+    hasMore: boolean;
+    rows: Array<Array<Cell>>;
+}
 export type Timestamp = bigint;
 export type UserId = Principal;
 export type Value = {
@@ -109,6 +152,12 @@ export type Value = {
     __kind__: "text";
     text: string;
 };
+export enum InviteStatus {
+    cancelled = "cancelled",
+    expired = "expired",
+    pending = "pending",
+    used = "used"
+}
 export enum Role {
     member = "member",
     departmentAdmin = "departmentAdmin",
@@ -129,8 +178,10 @@ export interface backendInterface {
     appointDepartmentAdmin(user: Principal): Promise<Profile>;
     approveUser(user: Principal): Promise<Profile>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    cancelInvite(inviteId: bigint): Promise<Invite>;
+    createInvite(fullName: string, workEmail: string, phone: string, department: string, role: Role): Promise<Invite>;
     denyUser(user: Principal): Promise<Profile>;
-    execute(qJson: string): Promise<Result>;
+    execute(qJson: string): Promise<Result__1>;
     getApiDoc(): Promise<string>;
     getCallerUserRole(): Promise<UserRole>;
     getDirectoryEntry(user: Principal): Promise<DirectoryEntry | null>;
@@ -139,8 +190,10 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     listApprovedUsers(): Promise<Array<Profile>>;
     listDirectory(): Promise<Array<DirectoryEntry>>;
+    listInvites(): Promise<Array<Invite>>;
     listPendingRequests(): Promise<Array<Profile>>;
     listSuspendedUsers(): Promise<Array<Profile>>;
+    redeemInvite(linkToken: string, code: string): Promise<Result>;
     registerProfile(fullName: string, workEmail: string, department: string, jobTitle: string): Promise<Profile>;
     reinstateUser(user: Principal): Promise<Profile>;
     removeDepartmentAdmin(user: Principal): Promise<Profile>;

@@ -45,4 +45,32 @@ module {
     content : Text;
     timestamp : Common.Timestamp;
   };
+
+  // Lifecycle of an invitation. `pending` is the only state an invite can be
+  // redeemed or cancelled from; the other three are terminal.
+  public type InviteStatus = {
+    #pending;
+    #used;
+    #expired;
+    #cancelled;
+  };
+
+  // A single-use invitation created by an admin. `linkToken` is the opaque
+  // single-use link token; `code` is the separate 6-digit code. Both are shown
+  // to the creating admin and are never delivered by the app.
+  public type Invite = {
+    id : Nat;
+    fullName : Text;
+    workEmail : Text;
+    phone : Text;
+    department : Text;
+    role : Role;
+    linkToken : Text;
+    code : Text;
+    status : InviteStatus;
+    createdBy : UserId;
+    createdAt : Common.Timestamp;
+    expiresAt : Common.Timestamp;
+    wrongCodeAttempts : Nat;
+  };
 };
